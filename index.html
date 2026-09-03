@@ -592,7 +592,7 @@
 <select id="filterStatus" onchange="renderNotes()"><option value="All">All Status</option><option>Pending</option><option>In Progress</option><option>Completed</option></select>
 <select id="filterPriority" onchange="renderNotes()"><option value="All">All Priority</option><option>High</option><option>Medium</option><option>Low</option></select>
 <button class="btn" onclick="exportTasks('json')">Export JSON</button><button class="btn" onclick="exportTasks('csv')">Export CSV</button>
-<label class="btn import-btn">Import<input type="file" accept=".json,.csv,.txt,application/json,text/csv,text/plain" onchange="importTasks(event)"></label>
+<label class="btn import-btn">Import<input type="file" accept=".json,.csv,.txt,.xlsx,.xls,.pptx,application/json,text/csv,text/plain,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.presentationml.presentation" onchange="importTasks(event)"></label>
 <button class="btn btn-danger" onclick="clearCompleted()">Clear Completed</button>
 </div>
 <div class="task-compose">
@@ -607,6 +607,9 @@
 </div>
 <div class="notes-grid" id="notesGrid"><div style="color: var(--text-dim); text-align:center; grid-column:1/-1; padding:1rem;">No saved records found.</div></div>
 </div></div>
+<!-- File import libraries: spreadsheet + PowerPoint parsing -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <script>
         function switchView(viewId, btn) {
             document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
@@ -768,27 +771,48 @@
         }
         function downloadFile(data,name,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500);}
         function parseCSVLine(line){let out=[],cur='',q=false;for(let i=0;i<line.length;i++){const c=line[i];if(c==='"'){if(q&&line[i+1]==='"'){cur+='"';i++;}else q=!q;}else if(c===','&&!q){out.push(cur);cur='';}else cur+=c;}out.push(cur);return out;}
-        function importTasks(e){
+        async function importTasks(e){
             const f=e.target.files[0]; if(!f)return;
-            const r=new FileReader();
-            r.onload=()=>{try{
-                const text=String(r.result||'').replace(/^\uFEFF/,'').trim();
-                let incoming=[]; const name=(f.name||'').toLowerCase();
-                if(name.endsWith('.json')||f.type.includes('json')){
-                    incoming=JSON.parse(text); if(!Array.isArray(incoming)) throw new Error('JSON must contain an array');
-                } else if(name.endsWith('.csv')||f.type.includes('csv')){
-                    const lines=text.split(/\r?\n/).filter(Boolean); if(!lines.length) throw new Error('Empty CSV');
-                    const headers=parseCSVLine(lines.shift()).map(h=>h.trim().toLowerCase());
-                    incoming=lines.map(line=>{const v=parseCSVLine(line), get=(key)=>{const i=headers.indexOf(key);return i>=0?v[i]:''}; return {id:get('id'),status:get('status')||'Pending',priority:get('priority')||'Medium',dueDate:get('due date')||get('duedate')||'',date:get('created')||get('date')||new Date().toLocaleDateString(),content:get('content')};}).filter(n=>n.content);
+            try{
+                const name=(f.name||'').toLowerCase(); let incoming=[];
+                if(name.endsWith('.xlsx')||name.endsWith('.xls')){
+                    if(typeof XLSX==='undefined') throw new Error('Spreadsheet reader failed to load.');
+                    const data=await f.arrayBuffer(); const wb=XLSX.read(data,{type:'array',cellDates:true});
+                    wb.SheetNames.forEach(sheetName=>{
+                        const rows=XLSX.utils.sheet_to_json(wb.Sheets[sheetName],{defval:'',raw:false});
+                        rows.forEach(row=>{
+                            const keys=Object.keys(row); const get=(...names)=>{for(const n of names){const k=keys.find(x=>String(x).trim().toLowerCase()===n.toLowerCase());if(k!==undefined&&row[k]!==undefined)return row[k];}return '';};
+                            const content=get('content','task','title','name','description','note','notes') || keys.map(k=>`${k}: ${row[k]}`).join(' | ');
+                            if(String(content).trim()) incoming.push({content:String(content),status:String(get('status')||'Pending'),priority:String(get('priority')||'Medium'),dueDate:String(get('due date','duedate','due')||''),date:String(get('created','date')||new Date().toLocaleDateString()),source:`Excel: ${sheetName}`});
+                        });
+                    });
+                } else if(name.endsWith('.pptx')){
+                    if(typeof JSZip==='undefined') throw new Error('PowerPoint reader failed to load.');
+                    const zip=await JSZip.loadAsync(await f.arrayBuffer());
+                    const slides=Object.keys(zip.files).filter(n=>/^ppt\/slides\/slide\d+\.xml$/.test(n)).sort((a,b)=>{const na=+(a.match(/slide(\d+)/)||[])[1], nb=+(b.match(/slide(\d+)/)||[])[1];return na-nb;});
+                    for(const slidePath of slides){
+                        const xml=await zip.files[slidePath].async('text'); const doc=new DOMParser().parseFromString(xml,'application/xml');
+                        const text=[...doc.getElementsByTagNameNS('http://schemas.openxmlformats.org/drawingml/2006/main','t')].map(n=>n.textContent.trim()).filter(Boolean).join(' ');
+                        if(text) incoming.push({content:text,status:'Pending',priority:'Medium',dueDate:'',date:new Date().toLocaleDateString(),source:`PowerPoint: ${slidePath.split('/').pop()}`});
+                    }
+                    if(!slides.length) throw new Error('No readable slides found in PowerPoint file.');
                 } else {
-                    // Plain text import: every non-empty line becomes a task.
-                    incoming=text.split(/\r?\n/).map(x=>x.trim()).filter(Boolean).map(content=>({content,status:'Pending',priority:'Medium',dueDate:'',date:new Date().toLocaleDateString()}));
+                    const text=(await f.text()).replace(/^\uFEFF/,'').trim();
+                    if(name.endsWith('.json')||f.type.includes('json')){
+                        incoming=JSON.parse(text); if(!Array.isArray(incoming)) throw new Error('JSON must contain an array');
+                    } else if(name.endsWith('.csv')||f.type.includes('csv')){
+                        const lines=text.split(/\r?\n/).filter(Boolean); if(!lines.length) throw new Error('Empty CSV');
+                        const headers=parseCSVLine(lines.shift()).map(h=>h.trim().toLowerCase());
+                        incoming=lines.map(line=>{const v=parseCSVLine(line),get=(key)=>{const i=headers.indexOf(key);return i>=0?v[i]:''};return {id:get('id'),status:get('status')||'Pending',priority:get('priority')||'Medium',dueDate:get('due date')||get('duedate')||'',date:get('created')||get('date')||new Date().toLocaleDateString(),content:get('content')||get('task')||get('title')};}).filter(n=>n.content);
+                    } else {
+                        incoming=text.split(/\r?\n/).map(x=>x.trim()).filter(Boolean).map(content=>({content,status:'Pending',priority:'Medium',dueDate:'',date:new Date().toLocaleDateString()}));
+                    }
                 }
                 const ids=new Set(notes.map(n=>String(n.id))); let added=0;
                 incoming.forEach(n=>{if(n&&n.content){let id=n.id||Date.now()+Math.random();while(ids.has(String(id)))id=Date.now()+Math.random();ids.add(String(id));notes.push({id,status:'Pending',priority:'Medium',dueDate:'',notified:false,date:new Date().toLocaleDateString(),...n});added++;}});
-                persistNotes(); renderNotes(); notifyTask(`Import completed: ${added} item(s) added.`);
-            }catch(err){console.error(err);notifyTask('Import failed. Please use a valid JSON, CSV, or TXT file.');}}
-            ;r.readAsText(f); e.target.value='';
+                persistNotes(); renderNotes(); notifyTask(`Import completed: ${added} item(s) added from ${f.name}.`);
+            }catch(err){console.error(err);notifyTask('Import failed. Supported files: JSON, CSV, TXT, XLSX/XLS and PPTX.');}
+            e.target.value='';
         }
         function checkDueReminders(){const now=Date.now();notes.forEach(n=>{if(!n.dueDate||n.status==='Completed'||n.notified)return;const due=new Date(n.dueDate).getTime();if(due<=now){n.notified=true;persistNotes();const title='Task reminder';const body=stripHtml(n.content).slice(0,120)||'A task is due now.';if('Notification'in window&&Notification.permission==='granted')new Notification(title,{body});else notifyTask('⚠️ Due now: '+body);}});}
         setInterval(checkDueReminders,30000); checkDueReminders(); renderNotes();
