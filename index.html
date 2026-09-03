@@ -478,7 +478,10 @@
     
 /* ===== V2 PRODUCTIVITY EXTENSION ===== */
 .v2-hero{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:1.4rem;border:1px solid rgba(0,240,255,.35);background:linear-gradient(135deg,rgba(0,240,255,.08),rgba(130,80,255,.08));border-radius:10px;margin-bottom:1.2rem}.v2-hero h2{margin:0;color:var(--neon-cyan);font-family:Orbitron}.v2-hero p{color:var(--text-dim);margin:.45rem 0 0}.task-stats{display:grid;grid-template-columns:repeat(5,minmax(150px,1fr));gap:1rem;margin-bottom:1.2rem}.stat-card{min-height:100px;padding:1rem;border:1px solid rgba(0,240,255,.28);background:var(--card-bg);border-radius:9px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 8px 24px rgba(0,0,0,.25)}.stat-card span{font-size:.72rem;color:var(--text-dim);letter-spacing:.06em}.stat-card strong{font-family:Orbitron;font-size:1.65rem;color:#fff}.progress-track{height:13px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden}.progress-bar{height:100%;width:0;background:linear-gradient(90deg,#00f0ff,#8b5cff);transition:width .35s}.due-summary{margin-top:.8rem;color:var(--text-dim);font-size:.85rem}.task-toolbar,.task-fields{display:flex;gap:.6rem;flex-wrap:wrap;margin:1rem 0}.task-toolbar input{flex:1;min-width:180px}.task-toolbar select,.task-fields select,.task-fields input{min-height:42px;background:rgba(5,11,20,.8);border:1px solid rgba(0,240,255,.3);color:#fff;border-radius:6px;padding:.55rem}.task-compose{border-top:1px solid rgba(0,240,255,.15);padding-top:.8rem}.task-fields>*{flex:1;min-width:150px}.import-btn input{display:none}.task-options{display:flex;gap:.7rem;align-items:center;flex-wrap:wrap}.priority-badge{font-size:.66rem;padding:.22rem .5rem;border-radius:999px;border:1px solid currentColor}.priority-High{color:#ff5c7a}.priority-Medium{color:#ffd166}.priority-Low{color:#7bdff2}.due-label{font-size:.7rem;color:var(--text-dim);margin-top:.45rem}.overdue{color:#ff5c7a}.task-meta{display:flex;gap:.45rem;align-items:center;flex-wrap:wrap}.task-msg{color:#7dffb3;font-size:.8rem}@media(max-width:950px){.task-stats{grid-template-columns:repeat(2,1fr)}}@media(max-width:560px){.task-stats{grid-template-columns:1fr}.v2-hero{align-items:flex-start;flex-direction:column}.task-toolbar>*{width:100%}}
-</style>
+
+        #taskNameInput { width:100%; margin-bottom:10px; font-family:'Share Tech Mono', monospace; }
+        .task-name-display input { border:1px solid var(--accent-cyan); background:rgba(0,240,255,.06); color:#fff; padding:8px; border-radius:6px; }
+    </style>
 </head>
 <body>
 
@@ -596,6 +599,7 @@
 <button class="btn btn-danger" onclick="clearCompleted()">Clear Completed</button>
 </div>
 <div class="task-compose">
+<input id="taskNameInput" type="text" placeholder="📝 Task Name / Title..." autocomplete="off">
 <div id="noteInputBox" class="paste-editor" contenteditable="true" placeholder="Type text or paste text/images directly here..."></div>
 <div class="task-fields">
 <select id="statusInput"><option value="Pending">Status: Pending</option><option value="In Progress">Status: In Progress</option><option value="Completed">Status: Completed</option></select>
@@ -607,6 +611,29 @@
 </div>
 <div class="notes-grid" id="notesGrid"><div style="color: var(--text-dim); text-align:center; grid-column:1/-1; padding:1rem;">No saved records found.</div></div>
 </div></div>
+
+<!-- Import Preview / Mapping Modal -->
+<div id="importPreviewModal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(2,6,14,.88);backdrop-filter:blur(8px);padding:20px;overflow:auto;">
+  <div style="max-width:1200px;margin:20px auto;background:#07111f;border:1px solid #00f0ff;border-radius:12px;padding:20px;box-shadow:0 0 30px rgba(0,240,255,.18);">
+    <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;">
+      <div><h2 id="importPreviewTitle" style="margin:0;color:#00f0ff;font-family:Orbitron,sans-serif;">IMPORT PREVIEW</h2><div id="importPreviewMeta" style="color:#64829d;margin-top:6px;"></div></div>
+      <button class="btn btn-danger" onclick="closeImportPreview()">Cancel</button>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin:16px 0;">
+      <input id="importSearch" type="search" placeholder="🔍 Search imported rows / slides..." oninput="renderImportPreview()" style="flex:1;min-width:220px;">
+      <select id="importSourceSelect" onchange="renderImportPreview()"></select>
+      <select id="taskNameMapping" onchange="renderImportPreview()"></select>
+      <button class="btn" onclick="selectAllImport(true)">Select All</button>
+      <button class="btn" onclick="selectAllImport(false)">Clear</button>
+    </div>
+    <div id="importPreviewTable" style="max-height:55vh;overflow:auto;border:1px solid rgba(0,240,255,.25);border-radius:8px;"></div>
+    <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-top:16px;">
+      <span id="importSelectedCount" style="color:#00ff66;"></span>
+      <button class="btn" onclick="commitImportPreview()">Import Selected as Tasks</button>
+    </div>
+  </div>
+</div>
+
 <!-- File import libraries: spreadsheet + PowerPoint parsing -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
@@ -726,7 +753,7 @@
         }
 
         let notes = JSON.parse(localStorage.getItem('cyber_tasks_v5') || '[]').map(n => ({
-            priority: 'Medium', dueDate: '', notified: false, ...n
+            taskName: '', priority: 'Medium', dueDate: '', notified: false, ...n
         }));
 
         function persistNotes(){ localStorage.setItem('cyber_tasks_v5', JSON.stringify(notes)); updateTaskDashboard(); }
@@ -734,20 +761,23 @@
         function requestNotifications(){ if(!('Notification' in window)){notifyTask('Browser notifications are not supported.');return;} Notification.requestPermission().then(p=>notifyTask(p==='granted'?'Desktop alerts enabled.':'Notification permission not granted.')); }
         function saveNote() {
             const editor=document.getElementById('noteInputBox'); const content=editor.innerHTML.trim();
-            if(!content || content==='<br>'){notifyTask('Please enter a task or log.'); return;}
-            notes.unshift({id:Date.now(),content,status:document.getElementById('statusInput').value,priority:document.getElementById('priorityInput').value,dueDate:document.getElementById('dueDateInput').value,notified:false,date:new Date().toLocaleDateString()});
-            persistNotes(); editor.innerHTML=''; document.getElementById('dueDateInput').value=''; renderNotes(); notifyTask('Entry saved.');
+            const taskName=(document.getElementById('taskNameInput').value||'').trim();
+            if(!taskName){notifyTask('Please enter a Task Name.'); document.getElementById('taskNameInput').focus(); return;}
+            if(!content || content==='<br>'){notifyTask('Please enter task details or a log.'); return;}
+            notes.unshift({id:Date.now(),taskName,content,status:document.getElementById('statusInput').value,priority:document.getElementById('priorityInput').value,dueDate:document.getElementById('dueDateInput').value,notified:false,date:new Date().toLocaleDateString()});
+            persistNotes(); editor.innerHTML=''; document.getElementById('taskNameInput').value=''; document.getElementById('dueDateInput').value=''; renderNotes(); notifyTask('Task saved.');
         }
         function deleteNote(id){ notes=notes.filter(n=>n.id!==id); persistNotes(); renderNotes(); }
         function clearCompleted(){ const count=notes.filter(n=>n.status==='Completed').length; if(!count){notifyTask('No completed tasks to clear.');return;} if(confirm(`Remove ${count} completed task(s)?`)){notes=notes.filter(n=>n.status!=='Completed');persistNotes();renderNotes();} }
         function toggleEditNote(id){
             const card=document.getElementById(`note-card-${id}`); const item=notes.find(n=>n.id===id); if(!item) return;
-            const content=card.querySelector('.note-content-display'); const controls=card.querySelector('.status-badge-container'); const btn=card.querySelector('.edit-btn-action');
+            const content=card.querySelector('.note-content-display'); const title=card.querySelector('.task-name-display'); const controls=card.querySelector('.status-badge-container'); const btn=card.querySelector('.edit-btn-action');
             if(content.dataset.editing==='true'){
                 const updated=content.querySelector('.paste-editor').innerHTML.trim(); if(updated && updated!=='<br>') item.content=updated;
+                const updatedTitle=(title.querySelector('input')?.value||'').trim(); if(updatedTitle) item.taskName=updatedTitle;
                 item.status=controls.querySelector('[data-edit-status]').value; item.priority=controls.querySelector('[data-edit-priority]').value; item.dueDate=controls.querySelector('[data-edit-due]').value; persistNotes(); renderNotes();
             } else {
-                content.dataset.editing='true'; content.innerHTML=`<div class="paste-editor" contenteditable="true" style="min-height:80px;">${item.content}</div>`;
+                content.dataset.editing='true'; title.innerHTML='<input type="text" value="'+escImport(item.taskName||'')+'" placeholder="Task Name" style="width:100%;margin-bottom:8px;">'; content.innerHTML=`<div class="paste-editor" contenteditable="true" style="min-height:80px;">${item.content}</div>`;
                 controls.innerHTML=`<select data-edit-status><option ${item.status==='Pending'?'selected':''}>Pending</option><option ${item.status==='In Progress'?'selected':''}>In Progress</option><option ${item.status==='Completed'?'selected':''}>Completed</option></select><select data-edit-priority><option ${item.priority==='High'?'selected':''}>High</option><option ${item.priority==='Medium'?'selected':''}>Medium</option><option ${item.priority==='Low'?'selected':''}>Low</option></select><input data-edit-due type="datetime-local" value="${item.dueDate||''}">`; btn.textContent='Save';
             }
         }
@@ -761,57 +791,103 @@
         function stripHtml(x){const d=document.createElement('div');d.innerHTML=x||'';return d.textContent.trim();}
         function renderNotes(){
             const grid=document.getElementById('notesGrid'); if(!grid)return; const q=(document.getElementById('taskSearch')?.value||'').toLowerCase(), fs=document.getElementById('filterStatus')?.value||'All', fp=document.getElementById('filterPriority')?.value||'All';
-            const filtered=notes.filter(n=>{const txt=(stripHtml(n.content)+' '+(n.status||'')+' '+(n.priority||'')).toLowerCase();return (!q||txt.includes(q))&&(fs==='All'||n.status===fs)&&(fp==='All'||n.priority===fp);});
+            const filtered=notes.filter(n=>{const txt=((n.taskName||'')+' '+stripHtml(n.content)+' '+(n.status||'')+' '+(n.priority||'')).toLowerCase();return (!q||txt.includes(q))&&(fs==='All'||n.status===fs)&&(fp==='All'||n.priority===fp);});
             if(!filtered.length){grid.innerHTML='<div style="color:var(--text-dim);text-align:center;grid-column:1/-1;padding:1rem;">No matching records found.</div>';updateTaskDashboard();return;}
-            const now=Date.now(); grid.innerHTML=filtered.map(item=>{let bc=item.status==='Completed'?'status-completed':item.status==='In Progress'?'status-progress':'status-pending'; const due=item.dueDate?new Date(item.dueDate):null; const overdue=due&&due.getTime()<now&&item.status!=='Completed'; return `<div class="note-card" id="note-card-${item.id}"><div class="note-content-display" data-editing="false">${item.content}</div><div class="status-badge-container"><div class="task-meta"><span class="status-badge ${bc}">${item.status}</span><span class="priority-badge priority-${item.priority||'Medium'}">${item.priority||'Medium'}</span></div><div class="due-label ${overdue?'overdue':''}">${due?`Due: ${due.toLocaleString()}`:'No due date'}</div></div><div class="note-footer"><span>${item.date}</span><div class="note-actions"><button class="btn edit-btn-action" style="padding:.15rem .4rem;font-size:.65rem;" onclick="toggleEditNote(${item.id})">Edit</button><button class="btn btn-danger" style="padding:.15rem .4rem;font-size:.65rem;" onclick="deleteNote(${item.id})">Delete</button></div></div></div>`;}).join(''); updateTaskDashboard();
+            const now=Date.now(); grid.innerHTML=filtered.map(item=>{let bc=item.status==='Completed'?'status-completed':item.status==='In Progress'?'status-progress':'status-pending'; const due=item.dueDate?new Date(item.dueDate):null; const overdue=due&&due.getTime()<now&&item.status!=='Completed'; return `<div class="note-card" id="note-card-${item.id}"><div class="task-name-display" style="font-family:Orbitron,sans-serif;color:#00f0ff;font-weight:700;font-size:.9rem;margin-bottom:8px;letter-spacing:.04em;">📝 ${escImport(item.taskName||'Untitled Task')}</div><div class="note-content-display" data-editing="false">${item.content}</div><div class="status-badge-container"><div class="task-meta"><span class="status-badge ${bc}">${item.status}</span><span class="priority-badge priority-${item.priority||'Medium'}">${item.priority||'Medium'}</span></div><div class="due-label ${overdue?'overdue':''}">${due?`Due: ${due.toLocaleString()}`:'No due date'}</div></div><div class="note-footer"><span>${item.date}</span><div class="note-actions"><button class="btn edit-btn-action" style="padding:.15rem .4rem;font-size:.65rem;" onclick="toggleEditNote(${item.id})">Edit</button><button class="btn btn-danger" style="padding:.15rem .4rem;font-size:.65rem;" onclick="deleteNote(${item.id})">Delete</button></div></div></div>`;}).join(''); updateTaskDashboard();
         }
         function exportTasks(type){
             if(type==='json'){downloadFile(JSON.stringify(notes,null,2),'cyber-tasks-v2.json','application/json');return;}
-            const rows=[['ID','Status','Priority','Due Date','Created','Content'],...notes.map(n=>[n.id,n.status,n.priority||'',n.dueDate||'',n.date||'',stripHtml(n.content)])]; downloadFile(rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n'),'cyber-tasks-v2.csv','text/csv');
+            const rows=[['ID','Task Name','Status','Priority','Due Date','Created','Content'],...notes.map(n=>[n.id,n.taskName||'',n.status,n.priority||'',n.dueDate||'',n.date||'',stripHtml(n.content)])]; downloadFile(rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n'),'cyber-tasks-v2.csv','text/csv');
         }
         function downloadFile(data,name,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500);}
         function parseCSVLine(line){let out=[],cur='',q=false;for(let i=0;i<line.length;i++){const c=line[i];if(c==='"'){if(q&&line[i+1]==='"'){cur+='"';i++;}else q=!q;}else if(c===','&&!q){out.push(cur);cur='';}else cur+=c;}out.push(cur);return out;}
+
+        let importPreviewData=[];
+        let importPreviewKind='';
+        function escImport(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+        function openImportPreview(data,kind,fileName){
+            importPreviewData=data.map((x,i)=>({...x,_id:i,_selected:true}));
+            importPreviewKind=kind;
+            document.getElementById('importPreviewTitle').textContent=kind==='excel'?'EXCEL WORKSHEET PREVIEW':'POWERPOINT SLIDE PREVIEW';
+            document.getElementById('importPreviewMeta').textContent=`${fileName} • ${importPreviewData.length} item(s) found`;
+            const source=document.getElementById('importSourceSelect');
+            const sources=[...new Set(importPreviewData.map(x=>x.source||''))];
+            source.innerHTML='<option value="All">All worksheets / slides</option>'+sources.map(x=>`<option value="${escImport(x)}">${escImport(x)}</option>`).join('');
+            const mapping=document.getElementById('taskNameMapping');
+            const keys=[...new Set(importPreviewData.flatMap(x=>Object.keys(x.fields||{})))];
+            mapping.innerHTML='<option value="__auto">Task Name: Auto Detect</option>'+keys.map(k=>`<option value="${escImport(k)}">Task Name: ${escImport(k)}</option>`).join('');
+            document.getElementById('importPreviewModal').style.display='block';
+            renderImportPreview();
+        }
+        function closeImportPreview(){document.getElementById('importPreviewModal').style.display='none';importPreviewData=[];}
+        function selectedTaskName(item){
+            const m=document.getElementById('taskNameMapping')?.value||'__auto';
+            if(m!=='__auto'&&item.fields&&item.fields[m]!=null)return String(item.fields[m]);
+            const f=item.fields||{};
+            const key=Object.keys(f).find(k=>/^(task name|task|title|name|content|description|note)$/i.test(k));
+            return key?String(f[key]):String(item.content||'');
+        }
+        function renderImportPreview(){
+            const q=(document.getElementById('importSearch')?.value||'').toLowerCase();
+            const source=document.getElementById('importSourceSelect')?.value||'All';
+            const rows=importPreviewData.filter(x=>(source==='All'||x.source===source)&&(!q||JSON.stringify(x.fields||x.content).toLowerCase().includes(q)||String(x.source).toLowerCase().includes(q)));
+            const table=document.getElementById('importPreviewTable');
+            if(importPreviewKind==='excel'){
+                table.innerHTML='<table style="width:100%;border-collapse:collapse;"><thead><tr><th>Select</th><th>Worksheet</th><th>Task Name Preview</th><th>Data</th></tr></thead><tbody>'+rows.map(x=>`<tr style="border-top:1px solid rgba(0,240,255,.14)"><td><input type="checkbox" ${x._selected?'checked':''} onchange="toggleImportItem(${x._id},this.checked)"></td><td>${escImport(x.source)}</td><td style="color:#fff;font-weight:bold">${escImport(selectedTaskName(x))}</td><td>${escImport(Object.entries(x.fields||{}).map(([k,v])=>k+': '+v).join(' • ')||x.content)}</td></tr>`).join('')+'</tbody></table>';
+            }else{
+                table.innerHTML='<div>'+rows.map(x=>`<div style="padding:14px;border-bottom:1px solid rgba(0,240,255,.14);display:flex;gap:12px;"><input type="checkbox" ${x._selected?'checked':''} onchange="toggleImportItem(${x._id},this.checked)"><div><div style="color:#00f0ff">${escImport(x.source)}</div><div style="margin-top:6px;color:#fff">${escImport(selectedTaskName(x))}</div></div></div>`).join('')+'</div>';
+            }
+            updateImportCount();
+        }
+        function toggleImportItem(id,val){const x=importPreviewData.find(a=>a._id===id);if(x)x._selected=val;updateImportCount();}
+        function selectAllImport(val){importPreviewData.forEach(x=>x._selected=val);renderImportPreview();}
+        function updateImportCount(){const n=importPreviewData.filter(x=>x._selected).length;document.getElementById('importSelectedCount').textContent=`${n} item(s) selected`;}
+        function commitImportPreview(){
+            const chosen=importPreviewData.filter(x=>x._selected).map(x=>({
+                content:selectedTaskName(x),
+                status:String((x.fields||{}).Status||(x.fields||{}).status||'Pending'),
+                priority:String((x.fields||{}).Priority||(x.fields||{}).priority||'Medium'),
+                dueDate:String((x.fields||{})['Due Date']||(x.fields||{}).DueDate||(x.fields||{}).dueDate||''),
+                date:new Date().toLocaleDateString(),source:x.source
+            })).filter(x=>x.content.trim());
+            const ids=new Set(notes.map(n=>String(n.id))); let added=0;
+            chosen.forEach(n=>{let id=Date.now()+Math.random();while(ids.has(String(id)))id=Date.now()+Math.random();ids.add(String(id));notes.push({id,notified:false,...n});added++;});
+            persistNotes();renderNotes();closeImportPreview();notifyTask(`Import completed: ${added} task(s) added.`);
+        }
         async function importTasks(e){
             const f=e.target.files[0]; if(!f)return;
             try{
-                const name=(f.name||'').toLowerCase(); let incoming=[];
+                const name=(f.name||'').toLowerCase();
                 if(name.endsWith('.xlsx')||name.endsWith('.xls')){
                     if(typeof XLSX==='undefined') throw new Error('Spreadsheet reader failed to load.');
-                    const data=await f.arrayBuffer(); const wb=XLSX.read(data,{type:'array',cellDates:true});
+                    const wb=XLSX.read(await f.arrayBuffer(),{type:'array',cellDates:true});
+                    const data=[];
                     wb.SheetNames.forEach(sheetName=>{
                         const rows=XLSX.utils.sheet_to_json(wb.Sheets[sheetName],{defval:'',raw:false});
-                        rows.forEach(row=>{
-                            const keys=Object.keys(row); const get=(...names)=>{for(const n of names){const k=keys.find(x=>String(x).trim().toLowerCase()===n.toLowerCase());if(k!==undefined&&row[k]!==undefined)return row[k];}return '';};
-                            const content=get('content','task','title','name','description','note','notes') || keys.map(k=>`${k}: ${row[k]}`).join(' | ');
-                            if(String(content).trim()) incoming.push({content:String(content),status:String(get('status')||'Pending'),priority:String(get('priority')||'Medium'),dueDate:String(get('due date','duedate','due')||''),date:String(get('created','date')||new Date().toLocaleDateString()),source:`Excel: ${sheetName}`});
-                        });
+                        rows.forEach((row,i)=>data.push({source:`Worksheet: ${sheetName} • Row ${i+2}`,fields:row,content:''}));
                     });
+                    if(!data.length) throw new Error('No readable rows found.');
+                    openImportPreview(data,'excel',f.name);
                 } else if(name.endsWith('.pptx')){
                     if(typeof JSZip==='undefined') throw new Error('PowerPoint reader failed to load.');
                     const zip=await JSZip.loadAsync(await f.arrayBuffer());
-                    const slides=Object.keys(zip.files).filter(n=>/^ppt\/slides\/slide\d+\.xml$/.test(n)).sort((a,b)=>{const na=+(a.match(/slide(\d+)/)||[])[1], nb=+(b.match(/slide(\d+)/)||[])[1];return na-nb;});
+                    const slides=Object.keys(zip.files).filter(n=>/^ppt\/slides\/slide\d+\.xml$/.test(n)).sort((a,b)=>+(a.match(/slide(\d+)/)||[])[1]-+(b.match(/slide(\d+)/)||[])[1]);
+                    const data=[];
                     for(const slidePath of slides){
                         const xml=await zip.files[slidePath].async('text'); const doc=new DOMParser().parseFromString(xml,'application/xml');
                         const text=[...doc.getElementsByTagNameNS('http://schemas.openxmlformats.org/drawingml/2006/main','t')].map(n=>n.textContent.trim()).filter(Boolean).join(' ');
-                        if(text) incoming.push({content:text,status:'Pending',priority:'Medium',dueDate:'',date:new Date().toLocaleDateString(),source:`PowerPoint: ${slidePath.split('/').pop()}`});
+                        if(text)data.push({source:`Slide ${+(slidePath.match(/slide(\d+)/)||[])[1]}`,fields:{'Slide Text':text},content:text});
                     }
-                    if(!slides.length) throw new Error('No readable slides found in PowerPoint file.');
+                    if(!data.length) throw new Error('No readable slides found.');
+                    openImportPreview(data,'pptx',f.name);
                 } else {
-                    const text=(await f.text()).replace(/^\uFEFF/,'').trim();
-                    if(name.endsWith('.json')||f.type.includes('json')){
-                        incoming=JSON.parse(text); if(!Array.isArray(incoming)) throw new Error('JSON must contain an array');
-                    } else if(name.endsWith('.csv')||f.type.includes('csv')){
-                        const lines=text.split(/\r?\n/).filter(Boolean); if(!lines.length) throw new Error('Empty CSV');
-                        const headers=parseCSVLine(lines.shift()).map(h=>h.trim().toLowerCase());
-                        incoming=lines.map(line=>{const v=parseCSVLine(line),get=(key)=>{const i=headers.indexOf(key);return i>=0?v[i]:''};return {id:get('id'),status:get('status')||'Pending',priority:get('priority')||'Medium',dueDate:get('due date')||get('duedate')||'',date:get('created')||get('date')||new Date().toLocaleDateString(),content:get('content')||get('task')||get('title')};}).filter(n=>n.content);
-                    } else {
-                        incoming=text.split(/\r?\n/).map(x=>x.trim()).filter(Boolean).map(content=>({content,status:'Pending',priority:'Medium',dueDate:'',date:new Date().toLocaleDateString()}));
-                    }
+                    const text=(await f.text()).replace(/^\uFEFF/,'').trim(); let incoming=[];
+                    if(name.endsWith('.json')||f.type.includes('json')){incoming=JSON.parse(text);if(!Array.isArray(incoming))throw new Error('JSON must contain an array');}
+                    else if(name.endsWith('.csv')||f.type.includes('csv')){const lines=text.split(/\r?\n/).filter(Boolean);const headers=parseCSVLine(lines.shift()).map(h=>h.trim().toLowerCase());incoming=lines.map(line=>{const v=parseCSVLine(line),get=k=>{const i=headers.indexOf(k);return i>=0?v[i]:''};return {content:get('content')||get('task')||get('title')||get('name'),status:get('status')||'Pending',priority:get('priority')||'Medium',dueDate:get('due date')||'',date:new Date().toLocaleDateString()};}).filter(x=>x.content);}
+                    else incoming=text.split(/\r?\n/).map(x=>x.trim()).filter(Boolean).map(content=>({content,status:'Pending',priority:'Medium',dueDate:'',date:new Date().toLocaleDateString()}));
+                    incoming.forEach(n=>notes.push({id:Date.now()+Math.random(),notified:false,status:'Pending',priority:'Medium',dueDate:'',date:new Date().toLocaleDateString(),...n}));persistNotes();renderNotes();notifyTask(`Import completed: ${incoming.length} item(s) added.`);
                 }
-                const ids=new Set(notes.map(n=>String(n.id))); let added=0;
-                incoming.forEach(n=>{if(n&&n.content){let id=n.id||Date.now()+Math.random();while(ids.has(String(id)))id=Date.now()+Math.random();ids.add(String(id));notes.push({id,status:'Pending',priority:'Medium',dueDate:'',notified:false,date:new Date().toLocaleDateString(),...n});added++;}});
-                persistNotes(); renderNotes(); notifyTask(`Import completed: ${added} item(s) added from ${f.name}.`);
-            }catch(err){console.error(err);notifyTask('Import failed. Supported files: JSON, CSV, TXT, XLSX/XLS and PPTX.');}
+            }catch(err){console.error(err);notifyTask('Import failed: '+(err.message||'Unsupported file.'));}
             e.target.value='';
         }
         function checkDueReminders(){const now=Date.now();notes.forEach(n=>{if(!n.dueDate||n.status==='Completed'||n.notified)return;const due=new Date(n.dueDate).getTime();if(due<=now){n.notified=true;persistNotes();const title='Task reminder';const body=stripHtml(n.content).slice(0,120)||'A task is due now.';if('Notification'in window&&Notification.permission==='granted')new Notification(title,{body});else notifyTask('⚠️ Due now: '+body);}});}
