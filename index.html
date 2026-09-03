@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title> Cyber Time //NA </title>
+    <title>Cyberpunk Time Suite // Next-Gen HUD</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -592,7 +592,7 @@
 <select id="filterStatus" onchange="renderNotes()"><option value="All">All Status</option><option>Pending</option><option>In Progress</option><option>Completed</option></select>
 <select id="filterPriority" onchange="renderNotes()"><option value="All">All Priority</option><option>High</option><option>Medium</option><option>Low</option></select>
 <button class="btn" onclick="exportTasks('json')">Export JSON</button><button class="btn" onclick="exportTasks('csv')">Export CSV</button>
-<label class="btn import-btn">Import<input type="file" accept="application/json,.json" onchange="importTasks(event)"></label>
+<label class="btn import-btn">Import<input type="file" accept=".json,.csv,.txt,application/json,text/csv,text/plain" onchange="importTasks(event)"></label>
 <button class="btn btn-danger" onclick="clearCompleted()">Clear Completed</button>
 </div>
 <div class="task-compose">
@@ -767,7 +767,29 @@
             const rows=[['ID','Status','Priority','Due Date','Created','Content'],...notes.map(n=>[n.id,n.status,n.priority||'',n.dueDate||'',n.date||'',stripHtml(n.content)])]; downloadFile(rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n'),'cyber-tasks-v2.csv','text/csv');
         }
         function downloadFile(data,name,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500);}
-        function importTasks(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const incoming=JSON.parse(r.result);if(!Array.isArray(incoming))throw new Error();const ids=new Set(notes.map(n=>String(n.id)));incoming.forEach(n=>{if(n&&n.content){let id=n.id||Date.now()+Math.random();while(ids.has(String(id)))id=Date.now()+Math.random();ids.add(String(id));notes.push({id,status:'Pending',priority:'Medium',dueDate:'',notified:false,date:new Date().toLocaleDateString(),...n});}});persistNotes();renderNotes();notifyTask('Import completed.');}catch{notifyTask('Invalid JSON backup file.');}};r.readAsText(f);e.target.value='';}
+        function parseCSVLine(line){let out=[],cur='',q=false;for(let i=0;i<line.length;i++){const c=line[i];if(c==='"'){if(q&&line[i+1]==='"'){cur+='"';i++;}else q=!q;}else if(c===','&&!q){out.push(cur);cur='';}else cur+=c;}out.push(cur);return out;}
+        function importTasks(e){
+            const f=e.target.files[0]; if(!f)return;
+            const r=new FileReader();
+            r.onload=()=>{try{
+                const text=String(r.result||'').replace(/^\uFEFF/,'').trim();
+                let incoming=[]; const name=(f.name||'').toLowerCase();
+                if(name.endsWith('.json')||f.type.includes('json')){
+                    incoming=JSON.parse(text); if(!Array.isArray(incoming)) throw new Error('JSON must contain an array');
+                } else if(name.endsWith('.csv')||f.type.includes('csv')){
+                    const lines=text.split(/\r?\n/).filter(Boolean); if(!lines.length) throw new Error('Empty CSV');
+                    const headers=parseCSVLine(lines.shift()).map(h=>h.trim().toLowerCase());
+                    incoming=lines.map(line=>{const v=parseCSVLine(line), get=(key)=>{const i=headers.indexOf(key);return i>=0?v[i]:''}; return {id:get('id'),status:get('status')||'Pending',priority:get('priority')||'Medium',dueDate:get('due date')||get('duedate')||'',date:get('created')||get('date')||new Date().toLocaleDateString(),content:get('content')};}).filter(n=>n.content);
+                } else {
+                    // Plain text import: every non-empty line becomes a task.
+                    incoming=text.split(/\r?\n/).map(x=>x.trim()).filter(Boolean).map(content=>({content,status:'Pending',priority:'Medium',dueDate:'',date:new Date().toLocaleDateString()}));
+                }
+                const ids=new Set(notes.map(n=>String(n.id))); let added=0;
+                incoming.forEach(n=>{if(n&&n.content){let id=n.id||Date.now()+Math.random();while(ids.has(String(id)))id=Date.now()+Math.random();ids.add(String(id));notes.push({id,status:'Pending',priority:'Medium',dueDate:'',notified:false,date:new Date().toLocaleDateString(),...n});added++;}});
+                persistNotes(); renderNotes(); notifyTask(`Import completed: ${added} item(s) added.`);
+            }catch(err){console.error(err);notifyTask('Import failed. Please use a valid JSON, CSV, or TXT file.');}}
+            ;r.readAsText(f); e.target.value='';
+        }
         function checkDueReminders(){const now=Date.now();notes.forEach(n=>{if(!n.dueDate||n.status==='Completed'||n.notified)return;const due=new Date(n.dueDate).getTime();if(due<=now){n.notified=true;persistNotes();const title='Task reminder';const body=stripHtml(n.content).slice(0,120)||'A task is due now.';if('Notification'in window&&Notification.permission==='granted')new Notification(title,{body});else notifyTask('⚠️ Due now: '+body);}});}
         setInterval(checkDueReminders,30000); checkDueReminders(); renderNotes();
 
