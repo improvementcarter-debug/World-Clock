@@ -912,10 +912,91 @@
         setInterval(masterTick, 1000);
         masterTick();
     </script> 
-    <footer style="text-align: center; padding: 2rem;">
-  <div style="display: inline-block; background: #f3f4f6; padding: 8px 16px; border-radius: 9999px; font-size: 0.85rem;">
-    ✨ © 2026 • Built for <a href="https://improvementcarter-debug.github.io/Pixel-Friend">Pixel Friend</a>
-  </div>
-</footer>
+   
+<style>
+  .live-footer-badge {
+    display: inline-block;
+    background: #f3f4f6;
+    padding: 8px 18px;
+    border-radius: 9999px;
+    font-size: 0.85rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease, background-color 0.3s ease;
+  }
+  
+  .live-footer-badge:hover {
+    transform: translateY(-3px);
+    background: #e5e7eb;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  }
+
+  .live-footer-badge a {
+    color: #4f46e5;
+    text-decoration: none;
+    font-weight: 600;
+    display: inline-flex;
+  }
+
+  /* Style for each character */
+  .active-letter {
+    display: inline-block;
+    transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), color 0.2s ease;
+  }
+
+  /* When hovering the link, ALL letters animate with a cascading wave */
+  .live-footer-badge a:hover .active-letter {
+    color: #4338ca;
+    transform: translateY(-4px) scale(1.08);
+  }
+
+  /* Automatically stagger transition delays for every single letter */
+  .live-footer-badge a:hover .active-letter:nth-child(1)  { transition-delay: 0.00s; }
+  .live-footer-badge a:hover .active-letter:nth-child(2)  { transition-delay: 0.02s; }
+  .live-footer-badge a:hover .active-letter:nth-child(3)  { transition-delay: 0.04s; }
+  .live-footer-badge a:hover .active-letter:nth-child(4)  { transition-delay: 0.06s; }
+  .live-footer-badge a:hover .active-letter:nth-child(5)  { transition-delay: 0.08s; }
+  .live-footer-badge a:hover .active-letter:nth-child(6)  { transition-delay: 0.10s; }
+  .live-footer-badge a:hover .active-letter:nth-child(7)  { transition-delay: 0.12s; }
+  .live-footer-badge a:hover .active-letter:nth-child(8)  { transition-delay: 0.14s; }
+  .live-footer-badge a:hover .active-letter:nth-child(9)  { transition-delay: 0.16s; }
+  .live-footer-badge a:hover .active-letter:nth-child(10) { transition-delay: 0.18s; }
+  .live-footer-badge a:hover .active-letter:nth-child(11) { transition-delay: 0.20s; }
+  .live-footer-badge a:hover .active-letter:nth-child(12) { transition-delay: 0.22s; }
+  .live-footer-badge a:hover .active-letter:nth-child(13) { transition-delay: 0.24s; }
+  .live-footer-badge a:hover .active-letter:nth-child(14) { transition-delay: 0.26s; }
+  .live-footer-badge a:hover .active-letter:nth-child(15) { transition-delay: 0.28s; }
+  .live-footer-badge a:hover .active-letter:nth-child(16) { transition-delay: 0.30s; }
+  .live-footer-badge a:hover .active-letter:nth-child(17) { transition-delay: 0.32s; }
+  .live-footer-badge a:hover .active-letter:nth-child(18) { transition-delay: 0.34s; }
+  .live-footer-badge a:hover .active-letter:nth-child(19) { transition-delay: 0.36s; }
+  .live-footer-badge a:hover .active-letter:nth-child(20) { transition-delay: 0.38s; }
+  .live-footer-badge a:hover .active-letter:nth-child(21) { transition-delay: 0.40s; }
+  .live-footer-badge a:hover .active-letter:nth-child(22) { transition-delay: 0.42s; }
+
+  /* Pulsing sparkle effect */
+  @keyframes pulse-sparkle {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.25); opacity: 0.85; }
+  }
+
+  .live-sparkle {
+    display: inline-block;
+    animation: pulse-sparkle 2s infinite ease-in-out;
+  }
+</style>
+
+<footer style="text-align: center; padding: 2rem;">
+  <div class="live-footer-badge">
+    <span class="live-sparkle">✨</span> 
+    <span class="active-letter">©</span> 
+    <span class="active-letter">&nbsp;</span>
+    <span class="active-letter" id="y1">2</span><span class="active-letter" id="y2">0</span><span class="active-letter" id="y3">2</span><span class="active-letter" id="y4">6</span> 
+    <span class="active-letter">&nbsp;</span><span class="active-letter">•</span><span class="active-letter">&nbsp;</span> 
+    <span class="active-letter">B</span><span class="active-letter">u</span><span class="active-letter">i</span><span class="active-letter">l</span><span class="active-letter">t</span> 
+    <span class="active-letter">&nbsp;</span> 
+    <span class="active-letter">f</span><span class="active-letter">o</span><span class="active-letter">r</span> 
+    <span class="active-letter">&nbsp;</span>
+    <a href="https://improvementcarter-debug.github.io/Pixel-Friend" target="_blank" rel="noopener noreferrer">
+      <span class="active-letter">P</span><span class="active-letter">i</span><span class="active-letter">x</span><span class="active-letter">e</span><span class="active-letter">l</span><span class="active-letter">&nbsp;</span><span class="active-letter">F</span><span class
 </body>
 </html>
