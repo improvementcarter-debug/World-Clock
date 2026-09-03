@@ -1,10 +1,11 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cyberpunk Time Suite // Next-Gen HUD</title>
+    <title> Cyber Time //NA </title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -30,7 +31,7 @@
         body {
             font-family: 'Share Tech Mono', monospace;
             background-color: var(--bg-deep);
-            background-image: 
+            background-image:
                 radial-gradient(circle at 10% 20%, rgba(157, 0, 255, 0.15) 0%, transparent 40%),
                 radial-gradient(circle at 90% 80%, rgba(255, 0, 127, 0.15) 0%, transparent 40%),
                 radial-gradient(circle at 50% 50%, rgba(0, 240, 255, 0.1) 0%, transparent 60%),
@@ -474,7 +475,10 @@
             from { opacity: 0.5; transform: scale(0.98); }
             to { opacity: 1; transform: scale(1.02); }
         }
-    </style>
+    
+/* ===== V2 PRODUCTIVITY EXTENSION ===== */
+.v2-hero{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:1.4rem;border:1px solid rgba(0,240,255,.35);background:linear-gradient(135deg,rgba(0,240,255,.08),rgba(130,80,255,.08));border-radius:10px;margin-bottom:1.2rem}.v2-hero h2{margin:0;color:var(--neon-cyan);font-family:Orbitron}.v2-hero p{color:var(--text-dim);margin:.45rem 0 0}.task-stats{display:grid;grid-template-columns:repeat(5,minmax(150px,1fr));gap:1rem;margin-bottom:1.2rem}.stat-card{min-height:100px;padding:1rem;border:1px solid rgba(0,240,255,.28);background:var(--card-bg);border-radius:9px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 8px 24px rgba(0,0,0,.25)}.stat-card span{font-size:.72rem;color:var(--text-dim);letter-spacing:.06em}.stat-card strong{font-family:Orbitron;font-size:1.65rem;color:#fff}.progress-track{height:13px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden}.progress-bar{height:100%;width:0;background:linear-gradient(90deg,#00f0ff,#8b5cff);transition:width .35s}.due-summary{margin-top:.8rem;color:var(--text-dim);font-size:.85rem}.task-toolbar,.task-fields{display:flex;gap:.6rem;flex-wrap:wrap;margin:1rem 0}.task-toolbar input{flex:1;min-width:180px}.task-toolbar select,.task-fields select,.task-fields input{min-height:42px;background:rgba(5,11,20,.8);border:1px solid rgba(0,240,255,.3);color:#fff;border-radius:6px;padding:.55rem}.task-compose{border-top:1px solid rgba(0,240,255,.15);padding-top:.8rem}.task-fields>*{flex:1;min-width:150px}.import-btn input{display:none}.task-options{display:flex;gap:.7rem;align-items:center;flex-wrap:wrap}.priority-badge{font-size:.66rem;padding:.22rem .5rem;border-radius:999px;border:1px solid currentColor}.priority-High{color:#ff5c7a}.priority-Medium{color:#ffd166}.priority-Low{color:#7bdff2}.due-label{font-size:.7rem;color:var(--text-dim);margin-top:.45rem}.overdue{color:#ff5c7a}.task-meta{display:flex;gap:.45rem;align-items:center;flex-wrap:wrap}.task-msg{color:#7dffb3;font-size:.8rem}@media(max-width:950px){.task-stats{grid-template-columns:repeat(2,1fr)}}@media(max-width:560px){.task-stats{grid-template-columns:1fr}.v2-hero{align-items:flex-start;flex-direction:column}.task-toolbar>*{width:100%}}
+</style>
 </head>
 <body>
 
@@ -490,15 +494,30 @@
     </header>
 
     <div class="nav-tabs">
-        <button class="tab-btn active" onclick="switchView('worldclock')">⚡ World Clock</button>
-        <button class="tab-btn" onclick="switchView('alarm')">⏰ Alarm</button>
-        <button class="tab-btn" onclick="switchView('stopwatch')">⏱️ Stopwatch</button>
-        <button class="tab-btn" onclick="switchView('timer')">⏳ Countdown Timer</button>
-        <button class="tab-btn" onclick="switchView('notes')">📝 Tasks & Logs</button>
-    </div>
+<button class="tab-btn active" onclick="switchView('dashboard', this)">📊 Dashboard</button>
+<button class="tab-btn" onclick="switchView('worldclock', this)">⚡ World Clock</button>
+<button class="tab-btn" onclick="switchView('alarm', this)">⏰ Alarm</button>
+<button class="tab-btn" onclick="switchView('stopwatch', this)">⏱️ Stopwatch</button>
+<button class="tab-btn" onclick="switchView('timer', this)">⏳ Countdown</button>
+<button class="tab-btn" onclick="switchView('notes', this)">📝 Tasks & Logs</button>
+</div>
 
-    <!-- VIEW 1: WORLD CLOCK -->
-    <div id="worldclock" class="view-section active">
+<div id="dashboard" class="view-section active">
+  <div class="v2-dashboard">
+    <div class="v2-hero"><div><h2>COMMAND CENTER // V2</h2><p>Live productivity overview and task control.</p></div><button class="btn" onclick="switchView('notes', document.querySelectorAll('.tab-btn')[5])">OPEN TASKS</button></div>
+    <div class="task-stats">
+      <div class="stat-card"><span>📋 TOTAL</span><strong id="statTotal">0</strong></div>
+      <div class="stat-card"><span>🕒 PENDING</span><strong id="statPending">0</strong></div>
+      <div class="stat-card"><span>⚙️ IN PROGRESS</span><strong id="statProgress">0</strong></div>
+      <div class="stat-card"><span>✅ COMPLETED</span><strong id="statCompleted">0</strong></div>
+      <div class="stat-card"><span>📈 PROGRESS</span><strong id="statPercent">0%</strong></div>
+    </div>
+    <div class="tool-card"><h2>Task Progress</h2><div class="progress-track"><div id="taskProgressBar" class="progress-bar"></div></div><div id="dueSummary" class="due-summary">No upcoming due dates.</div></div>
+  </div>
+</div>
+
+<!-- VIEW 1: WORLD CLOCK -->
+    <div id="worldclock" class="view-section">
         <div class="clock-container" id="clockContainer"></div>
     </div>
 
@@ -565,33 +584,35 @@
     </div>
 
     <!-- VIEW 5: TASKS & NOTES -->
-    <div id="notes" class="view-section">
-        <div class="tool-card" style="max-width: 800px; margin: 0 auto;">
-            <h2>Terminal Tasks & Logs (Text & Image Paste Support)</h2>
-            <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem;">
-                <!-- Content Box allowing direct copy-paste of text and images -->
-                <div id="noteInputBox" class="paste-editor" contenteditable="true" placeholder="Type text or paste text/images directly here..."></div>
-                <div style="display: flex; gap: 0.6rem;">
-                    <select id="statusInput" style="flex: 1;">
-                        <option value="Pending">Status: Pending</option>
-                        <option value="In Progress">Status: In Progress</option>
-                        <option value="Completed">Status: Completed</option>
-                    </select>
-                    <button class="btn" style="flex: 1;" onclick="saveNote()">Save Entry</button>
-                </div>
-            </div>
-            <div class="notes-grid" id="notesGrid">
-                <div style="color: var(--text-dim); text-align: center; grid-column: 1/-1; padding: 1rem;">No saved records found.</div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        function switchView(viewId) {
+<div id="notes" class="view-section">
+<div class="tool-card" style="max-width: 1100px; margin: 0 auto;">
+<h2>Terminal Tasks & Logs // V2</h2>
+<div class="task-toolbar">
+<input id="taskSearch" type="search" placeholder="🔍 Search tasks..." oninput="renderNotes()">
+<select id="filterStatus" onchange="renderNotes()"><option value="All">All Status</option><option>Pending</option><option>In Progress</option><option>Completed</option></select>
+<select id="filterPriority" onchange="renderNotes()"><option value="All">All Priority</option><option>High</option><option>Medium</option><option>Low</option></select>
+<button class="btn" onclick="exportTasks('json')">Export JSON</button><button class="btn" onclick="exportTasks('csv')">Export CSV</button>
+<label class="btn import-btn">Import<input type="file" accept="application/json,.json" onchange="importTasks(event)"></label>
+<button class="btn btn-danger" onclick="clearCompleted()">Clear Completed</button>
+</div>
+<div class="task-compose">
+<div id="noteInputBox" class="paste-editor" contenteditable="true" placeholder="Type text or paste text/images directly here..."></div>
+<div class="task-fields">
+<select id="statusInput"><option value="Pending">Status: Pending</option><option value="In Progress">Status: In Progress</option><option value="Completed">Status: Completed</option></select>
+<select id="priorityInput"><option value="Medium">Priority: Medium</option><option value="High">Priority: High</option><option value="Low">Priority: Low</option></select>
+<input id="dueDateInput" type="datetime-local" title="Due date and reminder">
+<button class="btn" onclick="saveNote()">Save Entry</button>
+</div>
+<div class="task-options"><button class="btn" onclick="requestNotifications()">🔔 Enable Desktop Alerts</button><span id="taskMessage"></span></div>
+</div>
+<div class="notes-grid" id="notesGrid"><div style="color: var(--text-dim); text-align:center; grid-column:1/-1; padding:1rem;">No saved records found.</div></div>
+</div></div>
+<script>
+        function switchView(viewId, btn) {
             document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
             document.getElementById(viewId).classList.add('active');
-            event.target.classList.add('active');
+            if (btn) btn.classList.add('active');
         }
 
         let audioCtx = null;
@@ -701,99 +722,54 @@
             lapList.innerHTML = laps.slice().reverse().map((l, i) => `<div class="list-item"><span>Lap ${laps.length-i}</span><span>${l}</span></div>`).join('');
         }
 
-        let notes = JSON.parse(localStorage.getItem('cyber_tasks_v5') || '[]');
-        
+        let notes = JSON.parse(localStorage.getItem('cyber_tasks_v5') || '[]').map(n => ({
+            priority: 'Medium', dueDate: '', notified: false, ...n
+        }));
+
+        function persistNotes(){ localStorage.setItem('cyber_tasks_v5', JSON.stringify(notes)); updateTaskDashboard(); }
+        function notifyTask(msg){ const el=document.getElementById('taskMessage'); if(el){el.textContent=msg; setTimeout(()=>el.textContent='',3000);} }
+        function requestNotifications(){ if(!('Notification' in window)){notifyTask('Browser notifications are not supported.');return;} Notification.requestPermission().then(p=>notifyTask(p==='granted'?'Desktop alerts enabled.':'Notification permission not granted.')); }
         function saveNote() {
-            const editor = document.getElementById('noteInputBox');
-            const htmlContent = editor.innerHTML.trim();
-            const status = document.getElementById('statusInput').value;
-            
-            if (!htmlContent || htmlContent === '<br>') return;
-
-            notes.unshift({ 
-                id: Date.now(), 
-                content: htmlContent, 
-                status: status, 
-                date: new Date().toLocaleDateString() 
-            });
-            
-            localStorage.setItem('cyber_tasks_v5', JSON.stringify(notes));
-            editor.innerHTML = '';
-            renderNotes();
+            const editor=document.getElementById('noteInputBox'); const content=editor.innerHTML.trim();
+            if(!content || content==='<br>'){notifyTask('Please enter a task or log.'); return;}
+            notes.unshift({id:Date.now(),content,status:document.getElementById('statusInput').value,priority:document.getElementById('priorityInput').value,dueDate:document.getElementById('dueDateInput').value,notified:false,date:new Date().toLocaleDateString()});
+            persistNotes(); editor.innerHTML=''; document.getElementById('dueDateInput').value=''; renderNotes(); notifyTask('Entry saved.');
         }
-
-        function deleteNote(id) {
-            notes = notes.filter(n => n.id !== id);
-            localStorage.setItem('cyber_tasks_v5', JSON.stringify(notes));
-            renderNotes();
-        }
-
-        function toggleEditNote(id) {
-            const noteCard = document.getElementById(`note-card-${id}`);
-            const contentArea = noteCard.querySelector('.note-content-display');
-            const statusBadgeContainer = noteCard.querySelector('.status-badge-container');
-            const editBtn = noteCard.querySelector('.edit-btn-action');
-
-            if (contentArea.getAttribute('data-editing') === 'true') {
-                const editor = contentArea.querySelector('.paste-editor');
-                const select = statusBadgeContainer.querySelector('select');
-                const newHtml = editor.innerHTML.trim();
-                const newStatus = select.value;
-                
-                if (newHtml && newHtml !== '<br>') {
-                    const noteObj = notes.find(n => n.id === id);
-                    if (noteObj) {
-                        noteObj.content = newHtml;
-                        noteObj.status = newStatus;
-                    }
-                    localStorage.setItem('cyber_tasks_v5', JSON.stringify(notes));
-                }
-                renderNotes();
+        function deleteNote(id){ notes=notes.filter(n=>n.id!==id); persistNotes(); renderNotes(); }
+        function clearCompleted(){ const count=notes.filter(n=>n.status==='Completed').length; if(!count){notifyTask('No completed tasks to clear.');return;} if(confirm(`Remove ${count} completed task(s)?`)){notes=notes.filter(n=>n.status!=='Completed');persistNotes();renderNotes();} }
+        function toggleEditNote(id){
+            const card=document.getElementById(`note-card-${id}`); const item=notes.find(n=>n.id===id); if(!item) return;
+            const content=card.querySelector('.note-content-display'); const controls=card.querySelector('.status-badge-container'); const btn=card.querySelector('.edit-btn-action');
+            if(content.dataset.editing==='true'){
+                const updated=content.querySelector('.paste-editor').innerHTML.trim(); if(updated && updated!=='<br>') item.content=updated;
+                item.status=controls.querySelector('[data-edit-status]').value; item.priority=controls.querySelector('[data-edit-priority]').value; item.dueDate=controls.querySelector('[data-edit-due]').value; persistNotes(); renderNotes();
             } else {
-                const noteObj = notes.find(n => n.id === id);
-                contentArea.setAttribute('data-editing', 'true');
-                contentArea.innerHTML = `<div class="paste-editor" contenteditable="true" style="min-height:80px;">${noteObj.content}</div>`;
-                
-                statusBadgeContainer.innerHTML = `
-                    <select class="paste-editor" style="padding: 0.2rem; min-height: auto; font-size:0.8rem;">
-                        <option value="Pending" ${noteObj.status === 'Pending' ? 'selected' : ''}>Pending</option>
-                        <option value="In Progress" ${noteObj.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
-                        <option value="Completed" ${noteObj.status === 'Completed' ? 'selected' : ''}>Completed</option>
-                    </select>
-                `;
-                editBtn.textContent = 'Save';
+                content.dataset.editing='true'; content.innerHTML=`<div class="paste-editor" contenteditable="true" style="min-height:80px;">${item.content}</div>`;
+                controls.innerHTML=`<select data-edit-status><option ${item.status==='Pending'?'selected':''}>Pending</option><option ${item.status==='In Progress'?'selected':''}>In Progress</option><option ${item.status==='Completed'?'selected':''}>Completed</option></select><select data-edit-priority><option ${item.priority==='High'?'selected':''}>High</option><option ${item.priority==='Medium'?'selected':''}>Medium</option><option ${item.priority==='Low'?'selected':''}>Low</option></select><input data-edit-due type="datetime-local" value="${item.dueDate||''}">`; btn.textContent='Save';
             }
         }
-
-        function renderNotes() {
-            const grid = document.getElementById('notesGrid');
-            if (notes.length === 0) {
-                grid.innerHTML = `<div style="color: var(--text-dim); text-align: center; grid-column: 1/-1; padding: 1rem;">No saved records found.</div>`;
-                return;
-            }
-            grid.innerHTML = notes.map(item => {
-                let badgeClass = 'status-pending';
-                if (item.status === 'In Progress') badgeClass = 'status-progress';
-                if (item.status === 'Completed') badgeClass = 'status-completed';
-
-                return `
-                    <div class="note-card" id="note-card-${item.id}">
-                        <div class="note-content-display" data-editing="false">${item.content}</div>
-                        <div style="display: flex; justify-content: space-between; align-items: center;" class="status-badge-container">
-                            <span class="status-badge ${badgeClass}">${item.status}</span>
-                        </div>
-                        <div class="note-footer">
-                            <span>${item.date}</span>
-                            <div class="note-actions">
-                                <button class="btn edit-btn-action" style="padding: 0.15rem 0.4rem; font-size:0.65rem;" onclick="toggleEditNote(${item.id})">Edit</button>
-                                <button class="btn btn-danger" style="padding: 0.15rem 0.4rem; font-size:0.65rem;" onclick="deleteNote(${item.id})">Delete</button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
+        function updateTaskDashboard(){
+            const total=notes.length, pending=notes.filter(n=>n.status==='Pending').length, progress=notes.filter(n=>n.status==='In Progress').length, done=notes.filter(n=>n.status==='Completed').length, pct=total?Math.round(done/total*100):0;
+            [['statTotal',total],['statPending',pending],['statProgress',progress],['statCompleted',done],['statPercent',pct+'%']].forEach(([id,v])=>{const e=document.getElementById(id);if(e)e.textContent=v;});
+            const bar=document.getElementById('taskProgressBar'); if(bar)bar.style.width=pct+'%';
+            const due=notes.filter(n=>n.dueDate && n.status!=='Completed').sort((a,b)=>new Date(a.dueDate)-new Date(b.dueDate))[0];
+            const ds=document.getElementById('dueSummary'); if(ds) ds.textContent=due?`Next due: ${new Date(due.dueDate).toLocaleString()}`:'No upcoming due dates.';
         }
-        renderNotes();
+        function stripHtml(x){const d=document.createElement('div');d.innerHTML=x||'';return d.textContent.trim();}
+        function renderNotes(){
+            const grid=document.getElementById('notesGrid'); if(!grid)return; const q=(document.getElementById('taskSearch')?.value||'').toLowerCase(), fs=document.getElementById('filterStatus')?.value||'All', fp=document.getElementById('filterPriority')?.value||'All';
+            const filtered=notes.filter(n=>{const txt=(stripHtml(n.content)+' '+(n.status||'')+' '+(n.priority||'')).toLowerCase();return (!q||txt.includes(q))&&(fs==='All'||n.status===fs)&&(fp==='All'||n.priority===fp);});
+            if(!filtered.length){grid.innerHTML='<div style="color:var(--text-dim);text-align:center;grid-column:1/-1;padding:1rem;">No matching records found.</div>';updateTaskDashboard();return;}
+            const now=Date.now(); grid.innerHTML=filtered.map(item=>{let bc=item.status==='Completed'?'status-completed':item.status==='In Progress'?'status-progress':'status-pending'; const due=item.dueDate?new Date(item.dueDate):null; const overdue=due&&due.getTime()<now&&item.status!=='Completed'; return `<div class="note-card" id="note-card-${item.id}"><div class="note-content-display" data-editing="false">${item.content}</div><div class="status-badge-container"><div class="task-meta"><span class="status-badge ${bc}">${item.status}</span><span class="priority-badge priority-${item.priority||'Medium'}">${item.priority||'Medium'}</span></div><div class="due-label ${overdue?'overdue':''}">${due?`Due: ${due.toLocaleString()}`:'No due date'}</div></div><div class="note-footer"><span>${item.date}</span><div class="note-actions"><button class="btn edit-btn-action" style="padding:.15rem .4rem;font-size:.65rem;" onclick="toggleEditNote(${item.id})">Edit</button><button class="btn btn-danger" style="padding:.15rem .4rem;font-size:.65rem;" onclick="deleteNote(${item.id})">Delete</button></div></div></div>`;}).join(''); updateTaskDashboard();
+        }
+        function exportTasks(type){
+            if(type==='json'){downloadFile(JSON.stringify(notes,null,2),'cyber-tasks-v2.json','application/json');return;}
+            const rows=[['ID','Status','Priority','Due Date','Created','Content'],...notes.map(n=>[n.id,n.status,n.priority||'',n.dueDate||'',n.date||'',stripHtml(n.content)])]; downloadFile(rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n'),'cyber-tasks-v2.csv','text/csv');
+        }
+        function downloadFile(data,name,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500);}
+        function importTasks(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const incoming=JSON.parse(r.result);if(!Array.isArray(incoming))throw new Error();const ids=new Set(notes.map(n=>String(n.id)));incoming.forEach(n=>{if(n&&n.content){let id=n.id||Date.now()+Math.random();while(ids.has(String(id)))id=Date.now()+Math.random();ids.add(String(id));notes.push({id,status:'Pending',priority:'Medium',dueDate:'',notified:false,date:new Date().toLocaleDateString(),...n});}});persistNotes();renderNotes();notifyTask('Import completed.');}catch{notifyTask('Invalid JSON backup file.');}};r.readAsText(f);e.target.value='';}
+        function checkDueReminders(){const now=Date.now();notes.forEach(n=>{if(!n.dueDate||n.status==='Completed'||n.notified)return;const due=new Date(n.dueDate).getTime();if(due<=now){n.notified=true;persistNotes();const title='Task reminder';const body=stripHtml(n.content).slice(0,120)||'A task is due now.';if('Notification'in window&&Notification.permission==='granted')new Notification(title,{body});else notifyTask('⚠️ Due now: '+body);}});}
+        setInterval(checkDueReminders,30000); checkDueReminders(); renderNotes();
 
         function masterTick() {
             const now = new Date();
@@ -803,7 +779,7 @@
                     const [timeOnly, ampmOnly] = timeStringFull.split(' ');
                     const dateString = now.toLocaleDateString('en-US', { timeZone: item.zone, month: 'short', day: 'numeric' });
                     const hour24 = parseInt(now.toLocaleTimeString('en-US', { timeZone: item.zone, hour12: false, hour: 'numeric' }), 10);
-                    
+
                     document.getElementById(`icon-${index}`).textContent = (hour24 >= 6 && hour24 < 18) ? '☀️' : '🌙';
                     document.getElementById(`time-${index}`).textContent = timeOnly;
                     document.getElementById(`ampm-${index}`).textContent = ampmOnly;
