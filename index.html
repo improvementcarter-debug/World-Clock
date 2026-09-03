@@ -1,0 +1,818 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyberpunk Time Suite // Next-Gen HUD</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #050b14;
+            --card-bg: rgba(13, 25, 48, 0.75);
+            --border-neon: rgba(0, 240, 255, 0.4);
+            --border-glow: #00f0ff;
+            --accent-cyan: #00f0ff;
+            --accent-magenta: #ff007f;
+            --accent-purple: #9d00ff;
+            --text-main: #ffffff;
+            --text-secondary: #00f0ff;
+            --text-dim: #64829d;
+            --danger: #ff3366;
+            --warning: #ffcc00;
+            --success: #00ff66;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            background-color: var(--bg-deep);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(157, 0, 255, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(255, 0, 127, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, rgba(0, 240, 255, 0.1) 0%, transparent 60%),
+                linear-gradient(rgba(0, 240, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 240, 255, 0.05) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 100% 100%, 30px 30px, 30px 30px;
+            color: var(--text-main);
+            margin: 0;
+            padding: 2rem 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.6rem;
+            letter-spacing: 4px;
+            background: linear-gradient(90deg, #00f0ff, #9d00ff, #ff007f);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+            margin: 0;
+            filter: drop-shadow(0 0 15px rgba(0, 240, 255, 0.4));
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            letter-spacing: 3px;
+            margin-top: 0.5rem;
+            text-transform: uppercase;
+            text-shadow: 0 0 8px rgba(0, 240, 255, 0.5);
+        }
+
+        /* Modern Glowing Navigation Tabs */
+        .nav-tabs {
+            display: flex;
+            gap: 0.8rem;
+            margin-bottom: 2.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .tab-btn {
+            background: rgba(13, 25, 48, 0.85);
+            border: 1px solid rgba(0, 240, 255, 0.2);
+            color: var(--text-dim);
+            padding: 0.75rem 1.4rem;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            backdrop-filter: blur(5px);
+        }
+
+        .tab-btn:hover {
+            color: var(--accent-cyan);
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 12px rgba(0, 240, 255, 0.3);
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, rgba(0, 240, 255, 0.2), rgba(157, 0, 255, 0.2));
+            color: var(--accent-cyan);
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.5), inset 0 0 10px rgba(0, 240, 255, 0.2);
+        }
+
+        .view-section {
+            display: none;
+            width: 100%;
+            max-width: 1200px;
+            animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .view-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* World Clock Grid Layout */
+        .clock-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+            gap: 1.25rem;
+            width: 100%;
+        }
+
+        .clock-card, .tool-card {
+            background: var(--card-bg);
+            border: 1px solid rgba(0, 240, 255, 0.25);
+            border-radius: 8px;
+            padding: 1.25rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), inset 0 0 20px rgba(0, 240, 255, 0.02);
+            position: relative;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .clock-card:hover, .tool-card:hover {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 8px 32px rgba(0, 240, 255, 0.15), inset 0 0 15px rgba(0, 240, 255, 0.05);
+            transform: translateY(-2px);
+        }
+
+        /* Futuristic Corner Accents */
+        .clock-card::before, .tool-card::before {
+            content: '';
+            position: absolute;
+            top: -1px; left: -1px;
+            width: 10px; height: 10px;
+            border-top: 2px solid var(--accent-cyan);
+            border-left: 2px solid var(--accent-cyan);
+        }
+
+        .clock-card::after, .tool-card::after {
+            content: '';
+            position: absolute;
+            bottom: -1px; right: -1px;
+            width: 10px; height: 10px;
+            border-bottom: 2px solid var(--accent-magenta);
+            border-right: 2px solid var(--accent-magenta);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px dashed rgba(0, 240, 255, 0.2);
+            padding-bottom: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .country-name {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+        }
+
+        .status-icon {
+            font-size: 1.1rem;
+            filter: drop-shadow(0 0 6px rgba(255, 215, 0, 0.6));
+        }
+
+        .time-wrapper {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+            margin-bottom: 0.5rem;
+        }
+
+        .time {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.7rem;
+            font-weight: 900;
+            color: var(--accent-cyan);
+            letter-spacing: 1px;
+            text-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
+        }
+
+        .ampm {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--accent-magenta);
+            text-shadow: 0 0 8px rgba(255, 0, 127, 0.4);
+        }
+
+        .date-zone-wrapper {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+        }
+
+        .date { color: var(--text-dim); text-transform: uppercase; }
+        .timezone-offset {
+            font-size: 0.68rem;
+            background: linear-gradient(90deg, rgba(0, 240, 255, 0.1), rgba(157, 0, 255, 0.1));
+            color: var(--accent-cyan);
+            padding: 2px 8px;
+            border-radius: 4px;
+            border: 1px solid rgba(0, 240, 255, 0.3);
+        }
+
+        /* Tools & Panels Grid */
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .tool-card h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1rem;
+            color: #ffffff;
+            margin-top: 0;
+            border-bottom: 1px solid rgba(0, 240, 255, 0.2);
+            padding-bottom: 0.6rem;
+            letter-spacing: 1px;
+        }
+
+        .big-display {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.8rem;
+            font-weight: 900;
+            text-align: center;
+            margin: 1.2rem 0;
+            color: var(--accent-cyan);
+            text-shadow: 0 0 18px rgba(0, 240, 255, 0.6);
+        }
+
+        .control-group {
+            display: flex;
+            gap: 0.6rem;
+            margin-bottom: 1rem;
+        }
+
+        input[type="time"], input[type="number"], input[type="text"], select {
+            background: rgba(5, 11, 20, 0.85);
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            color: var(--accent-cyan);
+            padding: 0.65rem;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 1.05rem;
+            border-radius: 6px;
+            flex: 1;
+            outline: none;
+            transition: all 0.25s;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 12px rgba(0, 240, 255, 0.4);
+        }
+
+        /* Editable Content Box for Paste Support */
+        .paste-editor {
+            background: rgba(5, 11, 20, 0.85);
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            color: var(--accent-cyan);
+            padding: 0.8rem;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 1rem;
+            border-radius: 6px;
+            min-height: 110px;
+            max-height: 250px;
+            overflow-y: auto;
+            outline: none;
+            transition: all 0.25s;
+        }
+
+        .paste-editor:focus {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 12px rgba(0, 240, 255, 0.4);
+        }
+
+        .paste-editor img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+            border: 1px solid rgba(0, 240, 255, 0.4);
+            margin: 0.5rem 0;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, rgba(0, 240, 255, 0.15), rgba(157, 0, 255, 0.15));
+            border: 1px solid var(--accent-cyan);
+            color: var(--accent-cyan);
+            padding: 0.65rem 1.3rem;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 0.75rem;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.25s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn:hover {
+            background: var(--accent-cyan);
+            color: var(--bg-deep);
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.7);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, rgba(255, 0, 127, 0.15), rgba(255, 51, 102, 0.15));
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+        .btn-danger:hover {
+            background: var(--danger);
+            color: #ffffff;
+            box-shadow: 0 0 15px rgba(255, 51, 102, 0.7);
+        }
+
+        .list-container {
+            max-height: 190px;
+            overflow-y: auto;
+            margin-top: 1rem;
+            border-top: 1px dashed rgba(0, 240, 255, 0.2);
+            padding-top: 0.5rem;
+        }
+
+        .list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(5, 11, 20, 0.65);
+            padding: 0.55rem 0.9rem;
+            margin-bottom: 0.45rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            border: 1px solid rgba(0, 240, 255, 0.15);
+        }
+
+        .timer-inputs {
+            display: flex;
+            gap: 0.6rem;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+
+        .timer-inputs div {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+        }
+
+        /* Tasks & Notes Styling */
+        .notes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+            margin-top: 1.25rem;
+            max-height: 480px;
+            overflow-y: auto;
+        }
+
+        .note-card {
+            background: rgba(5, 11, 20, 0.75);
+            border: 1px solid rgba(0, 240, 255, 0.25);
+            border-radius: 6px;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 0.75rem;
+        }
+
+        .note-content-display {
+            word-break: break-word;
+            white-space: pre-wrap;
+            font-size: 0.9rem;
+            color: #ffffff;
+            width: 100%;
+        }
+
+        .note-content-display img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+            border: 1px solid rgba(0, 240, 255, 0.4);
+            margin: 0.5rem 0;
+        }
+
+        .status-badge {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.62rem;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: 1px solid currentColor;
+        }
+        .status-pending { color: var(--warning); background: rgba(255, 204, 0, 0.1); }
+        .status-progress { color: var(--accent-cyan); background: rgba(0, 240, 255, 0.1); }
+        .status-completed { color: var(--success); background: rgba(0, 255, 102, 0.1); }
+
+        .note-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            border-top: 1px dashed rgba(0, 240, 255, 0.2);
+            padding-top: 0.4rem;
+        }
+
+        .note-actions {
+            display: flex;
+            gap: 0.4rem;
+        }
+
+        /* Notification Modal */
+        #alarmModal {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(5, 11, 20, 0.92);
+            backdrop-filter: blur(10px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        #alarmModal h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.8rem;
+            color: var(--danger);
+            text-shadow: 0 0 25px var(--danger);
+            animation: pulseAlert 0.6s infinite alternate;
+        }
+        @keyframes pulseAlert {
+            from { opacity: 0.5; transform: scale(0.98); }
+            to { opacity: 1; transform: scale(1.02); }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="alarmModal">
+        <h2 id="modalAlarmText">⚠️ SYSTEM ALERT: ALARM ⚠️</h2>
+        <div style="font-size: 1.4rem; color: #ffffff;" id="modalTimeDisplay">--:--</div>
+        <button class="btn btn-danger" style="font-size: 1rem; padding: 0.8rem 2rem;" onclick="stopAlarmRinging()">DISMISS ALERT</button>
+    </div>
+
+    <header>
+        <h1>Cyberpunk Time Suite</h1>
+        <div class="subtitle">// Next-Gen Synchronized HUD Terminal</div>
+    </header>
+
+    <div class="nav-tabs">
+        <button class="tab-btn active" onclick="switchView('worldclock')">⚡ World Clock</button>
+        <button class="tab-btn" onclick="switchView('alarm')">⏰ Alarm</button>
+        <button class="tab-btn" onclick="switchView('stopwatch')">⏱️ Stopwatch</button>
+        <button class="tab-btn" onclick="switchView('timer')">⏳ Countdown Timer</button>
+        <button class="tab-btn" onclick="switchView('notes')">📝 Tasks & Logs</button>
+    </div>
+
+    <!-- VIEW 1: WORLD CLOCK -->
+    <div id="worldclock" class="view-section active">
+        <div class="clock-container" id="clockContainer"></div>
+    </div>
+
+    <!-- VIEW 2: ALARM -->
+    <div id="alarm" class="view-section">
+        <div class="tools-grid">
+            <div class="tool-card">
+                <h2>Configure Alarm</h2>
+                <div class="control-group" style="margin-top: 1.25rem;">
+                    <input type="time" id="alarmInput">
+                    <button class="btn" onclick="addAlarm()">Add Alarm</button>
+                </div>
+            </div>
+            <div class="tool-card">
+                <h2>Active Alarm Matrix</h2>
+                <div class="list-container" id="alarmList">
+                    <div style="color: var(--text-dim); text-align: center; padding: 1rem;">No active alarms set.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- VIEW 3: STOPWATCH -->
+    <div id="stopwatch" class="view-section">
+        <div class="tool-card" style="max-width: 550px; margin: 0 auto;">
+            <h2>Stopwatch Matrix</h2>
+            <div class="big-display" id="swDisplay">00:00:00.00</div>
+            <div class="control-group" style="justify-content: center;">
+                <button class="btn" onclick="startStopwatch()">Start</button>
+                <button class="btn" onclick="pauseStopwatch()">Pause</button>
+                <button class="btn btn-danger" onclick="resetStopwatch()">Reset</button>
+                <button class="btn" onclick="lapStopwatch()">Lap</button>
+            </div>
+            <div class="list-container" id="lapList">
+                <div style="color: var(--text-dim); text-align: center; padding: 0.5rem;">No laps recorded.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- VIEW 4: TIMER -->
+    <div id="timer" class="view-section">
+        <div class="tool-card" style="max-width: 550px; margin: 0 auto;">
+            <h2>Countdown Timer</h2>
+            <div class="timer-inputs" id="timerInputsWrapper">
+                <div>
+                    <input type="number" id="timerHours" value="0" min="0" max="23" style="width: 65px; text-align:center;">
+                    <span>Hours</span>
+                </div>
+                <div>
+                    <input type="number" id="timerMinutes" value="5" min="0" max="59" style="width: 65px; text-align:center;">
+                    <span>Minutes</span>
+                </div>
+                <div>
+                    <input type="number" id="timerSeconds" value="0" min="0" max="59" style="width: 65px; text-align:center;">
+                    <span>Seconds</span>
+                </div>
+            </div>
+            <div class="big-display" id="timerDisplay" style="display:none;">00:05:00</div>
+            <div class="control-group" style="justify-content: center;">
+                <button class="btn" id="timerStartBtn" onclick="startTimer()">Start Timer</button>
+                <button class="btn btn-danger" onclick="resetTimer()">Reset</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- VIEW 5: TASKS & NOTES -->
+    <div id="notes" class="view-section">
+        <div class="tool-card" style="max-width: 800px; margin: 0 auto;">
+            <h2>Terminal Tasks & Logs (Text & Image Paste Support)</h2>
+            <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem;">
+                <!-- Content Box allowing direct copy-paste of text and images -->
+                <div id="noteInputBox" class="paste-editor" contenteditable="true" placeholder="Type text or paste text/images directly here..."></div>
+                <div style="display: flex; gap: 0.6rem;">
+                    <select id="statusInput" style="flex: 1;">
+                        <option value="Pending">Status: Pending</option>
+                        <option value="In Progress">Status: In Progress</option>
+                        <option value="Completed">Status: Completed</option>
+                    </select>
+                    <button class="btn" style="flex: 1;" onclick="saveNote()">Save Entry</button>
+                </div>
+            </div>
+            <div class="notes-grid" id="notesGrid">
+                <div style="color: var(--text-dim); text-align: center; grid-column: 1/-1; padding: 1rem;">No saved records found.</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchView(viewId) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        let audioCtx = null;
+        window.addEventListener('click', () => {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }, { once: true });
+
+        function startAlarmRinging(timeStr) {
+            document.getElementById('modalTimeDisplay').textContent = `Target Trigger: ${timeStr}`;
+            document.getElementById('alarmModal').style.display = 'flex';
+        }
+
+        function stopAlarmRinging() {
+            document.getElementById('alarmModal').style.display = 'none';
+        }
+
+        const timeZones = [
+            { name: "Cambodia (KH)", zone: "Asia/Phnom_Penh" },
+            { name: "China (CN)", zone: "Asia/Shanghai" },
+            { name: "Philippines (PH)", zone: "Asia/Manila" },
+            { name: "Brazil (BR)", zone: "America/Sao_Paulo" },
+            { name: "Bangladesh (BD)", zone: "Asia/Dhaka" },
+            { name: "Mexico (MX)", zone: "America/Mexico_City" },
+            { name: "Indonesia (ID)", zone: "Asia/Jakarta" },
+            { name: "Malaysia (MY)", zone: "Asia/Kuala_Lumpur" },
+            { name: "Myanmar (MM)", zone: "Asia/Yangon" },
+            { name: "Madagascar (MG)", zone: "Indian/Antananarivo" }
+        ];
+
+        const clockContainer = document.getElementById('clockContainer');
+        timeZones.forEach((item, index) => {
+            const card = document.createElement('div');
+            card.className = 'clock-card';
+            card.innerHTML = `
+                <div class="card-header">
+                    <div class="country-name">${item.name}</div>
+                    <div class="status-icon" id="icon-${index}">☀️</div>
+                </div>
+                <div class="time-wrapper">
+                    <div class="time" id="time-${index}">00:00:00</div>
+                    <div class="ampm" id="ampm-${index}">AM</div>
+                </div>
+                <div class="date-zone-wrapper">
+                    <div class="date" id="date-${index}">--</div>
+                    <div class="timezone-offset" id="offset-${index}">UTC</div>
+                </div>
+            `;
+            clockContainer.appendChild(card);
+        });
+
+        let alarms = [];
+        function addAlarm() {
+            const val = document.getElementById('alarmInput').value;
+            if (!val || alarms.includes(val)) return;
+            alarms.push(val);
+            renderAlarms();
+            document.getElementById('alarmInput').value = '';
+        }
+
+        function removeAlarm(index) {
+            alarms.splice(index, 1);
+            renderAlarms();
+        }
+
+        function renderAlarms() {
+            const list = document.getElementById('alarmList');
+            if (alarms.length === 0) {
+                list.innerHTML = `<div style="color: var(--text-dim); text-align: center; padding: 1rem;">No active alarms set.</div>`;
+                return;
+            }
+            list.innerHTML = '';
+            alarms.forEach((time, index) => {
+                const item = document.createElement('div');
+                item.className = 'list-item';
+                item.innerHTML = `<span style="font-family:'Orbitron'; font-weight:700; color:#fff;">${time}</span><button class="btn btn-danger" style="padding: 0.2rem 0.5rem; font-size:0.7rem;" onclick="removeAlarm(${index})">Delete</button>`;
+                list.appendChild(item);
+            });
+        }
+
+        let swTimer = null; let swTimeMs = 0; let laps = [];
+        function formatStopwatch(ms) {
+            let totalSecs = Math.floor(ms / 1000);
+            let mins = Math.floor(totalSecs / 60);
+            let secs = totalSecs % 60;
+            let centis = Math.floor((ms % 1000) / 10);
+            let hrs = Math.floor(mins / 60);
+            return `${String(hrs).padStart(2,'0')}:${String(mins%60).padStart(2,'0')}:${String(secs).padStart(2,'0')}.${String(centis).padStart(2,'0')}`;
+        }
+
+        function startStopwatch() {
+            if (swTimer) return;
+            let lastTime = Date.now();
+            swTimer = setInterval(() => {
+                let now = Date.now();
+                swTimeMs += (now - lastTime);
+                lastTime = now;
+                document.getElementById('swDisplay').textContent = formatStopwatch(swTimeMs);
+            }, 30);
+        }
+
+        function pauseStopwatch() { clearInterval(swTimer); swTimer = null; }
+        function resetStopwatch() { pauseStopwatch(); swTimeMs = 0; document.getElementById('swDisplay').textContent = "00:00:00.00"; }
+        function lapStopwatch() {
+            if (!swTimer) return;
+            laps.push(formatStopwatch(swTimeMs));
+            const lapList = document.getElementById('lapList');
+            lapList.innerHTML = laps.slice().reverse().map((l, i) => `<div class="list-item"><span>Lap ${laps.length-i}</span><span>${l}</span></div>`).join('');
+        }
+
+        let notes = JSON.parse(localStorage.getItem('cyber_tasks_v5') || '[]');
+        
+        function saveNote() {
+            const editor = document.getElementById('noteInputBox');
+            const htmlContent = editor.innerHTML.trim();
+            const status = document.getElementById('statusInput').value;
+            
+            if (!htmlContent || htmlContent === '<br>') return;
+
+            notes.unshift({ 
+                id: Date.now(), 
+                content: htmlContent, 
+                status: status, 
+                date: new Date().toLocaleDateString() 
+            });
+            
+            localStorage.setItem('cyber_tasks_v5', JSON.stringify(notes));
+            editor.innerHTML = '';
+            renderNotes();
+        }
+
+        function deleteNote(id) {
+            notes = notes.filter(n => n.id !== id);
+            localStorage.setItem('cyber_tasks_v5', JSON.stringify(notes));
+            renderNotes();
+        }
+
+        function toggleEditNote(id) {
+            const noteCard = document.getElementById(`note-card-${id}`);
+            const contentArea = noteCard.querySelector('.note-content-display');
+            const statusBadgeContainer = noteCard.querySelector('.status-badge-container');
+            const editBtn = noteCard.querySelector('.edit-btn-action');
+
+            if (contentArea.getAttribute('data-editing') === 'true') {
+                const editor = contentArea.querySelector('.paste-editor');
+                const select = statusBadgeContainer.querySelector('select');
+                const newHtml = editor.innerHTML.trim();
+                const newStatus = select.value;
+                
+                if (newHtml && newHtml !== '<br>') {
+                    const noteObj = notes.find(n => n.id === id);
+                    if (noteObj) {
+                        noteObj.content = newHtml;
+                        noteObj.status = newStatus;
+                    }
+                    localStorage.setItem('cyber_tasks_v5', JSON.stringify(notes));
+                }
+                renderNotes();
+            } else {
+                const noteObj = notes.find(n => n.id === id);
+                contentArea.setAttribute('data-editing', 'true');
+                contentArea.innerHTML = `<div class="paste-editor" contenteditable="true" style="min-height:80px;">${noteObj.content}</div>`;
+                
+                statusBadgeContainer.innerHTML = `
+                    <select class="paste-editor" style="padding: 0.2rem; min-height: auto; font-size:0.8rem;">
+                        <option value="Pending" ${noteObj.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                        <option value="In Progress" ${noteObj.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
+                        <option value="Completed" ${noteObj.status === 'Completed' ? 'selected' : ''}>Completed</option>
+                    </select>
+                `;
+                editBtn.textContent = 'Save';
+            }
+        }
+
+        function renderNotes() {
+            const grid = document.getElementById('notesGrid');
+            if (notes.length === 0) {
+                grid.innerHTML = `<div style="color: var(--text-dim); text-align: center; grid-column: 1/-1; padding: 1rem;">No saved records found.</div>`;
+                return;
+            }
+            grid.innerHTML = notes.map(item => {
+                let badgeClass = 'status-pending';
+                if (item.status === 'In Progress') badgeClass = 'status-progress';
+                if (item.status === 'Completed') badgeClass = 'status-completed';
+
+                return `
+                    <div class="note-card" id="note-card-${item.id}">
+                        <div class="note-content-display" data-editing="false">${item.content}</div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;" class="status-badge-container">
+                            <span class="status-badge ${badgeClass}">${item.status}</span>
+                        </div>
+                        <div class="note-footer">
+                            <span>${item.date}</span>
+                            <div class="note-actions">
+                                <button class="btn edit-btn-action" style="padding: 0.15rem 0.4rem; font-size:0.65rem;" onclick="toggleEditNote(${item.id})">Edit</button>
+                                <button class="btn btn-danger" style="padding: 0.15rem 0.4rem; font-size:0.65rem;" onclick="deleteNote(${item.id})">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        renderNotes();
+
+        function masterTick() {
+            const now = new Date();
+            timeZones.forEach((item, index) => {
+                try {
+                    const timeStringFull = now.toLocaleTimeString('en-US', { timeZone: item.zone, hour12: true, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    const [timeOnly, ampmOnly] = timeStringFull.split(' ');
+                    const dateString = now.toLocaleDateString('en-US', { timeZone: item.zone, month: 'short', day: 'numeric' });
+                    const hour24 = parseInt(now.toLocaleTimeString('en-US', { timeZone: item.zone, hour12: false, hour: 'numeric' }), 10);
+                    
+                    document.getElementById(`icon-${index}`).textContent = (hour24 >= 6 && hour24 < 18) ? '☀️' : '🌙';
+                    document.getElementById(`time-${index}`).textContent = timeOnly;
+                    document.getElementById(`ampm-${index}`).textContent = ampmOnly;
+                    document.getElementById(`date-${index}`).textContent = dateString;
+                } catch (e) {}
+            });
+        }
+        setInterval(masterTick, 1000);
+        masterTick();
+    </script>
+</body>
+</html>
