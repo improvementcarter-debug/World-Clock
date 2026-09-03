@@ -985,18 +985,79 @@
   }
 </style>
 
+
+<style>
+  .live-footer-badge {
+    display: inline-block;
+    background: #f3f4f6;
+    padding: 8px 18px;
+    border-radius: 9999px;
+    font-size: 0.85rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+    white-space: nowrap;
+    width: 320px; /* Adjust width to fit your layout */
+    max-width: 100%;
+    position: relative;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .live-footer-badge:hover {
+    background: #e5e7eb;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  }
+
+  /* News ticker animation track */
+  .ticker-track {
+    display: inline-block;
+    animation: scroll-ticker 12s linear infinite;
+  }
+
+  /* Pause scrolling when user hovers over the footer */
+  .live-footer-badge:hover .ticker-track {
+    animation-play-state: paused;
+  }
+
+  .live-footer-badge a {
+    color: #4f46e5;
+    text-decoration: none;
+    font-weight: 600;
+  }
+
+  .live-footer-badge a:hover {
+    text-decoration: underline;
+  }
+
+  /* Continuous scrolling keyframes */
+  @keyframes scroll-ticker {
+    0% { transform: translateX(100%); }
+    100% { transform: translateX(-100%); }
+  }
+
+  /* Pulsing sparkle effect */
+  @keyframes pulse-sparkle {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.25); opacity: 0.85; }
+  }
+
+  .live-sparkle {
+    display: inline-block;
+    animation: pulse-sparkle 2s infinite ease-in-out;
+  }
+</style>
+
 <footer style="text-align: center; padding: 2rem;">
   <div class="live-footer-badge">
-    <span class="live-sparkle">✨</span> 
-    <span class="active-letter">©</span> 
-    <span class="active-letter">&nbsp;</span>
-    <span class="active-letter" id="y1">2</span><span class="active-letter" id="y2">0</span><span class="active-letter" id="y3">2</span><span class="active-letter" id="y4">6</span> 
-    <span class="active-letter">&nbsp;</span><span class="active-letter">•</span><span class="active-letter">&nbsp;</span> 
-    <span class="active-letter">B</span><span class="active-letter">u</span><span class="active-letter">i</span><span class="active-letter">l</span><span class="active-letter">t</span> 
-    <span class="active-letter">&nbsp;</span> 
-    <span class="active-letter">f</span><span class="active-letter">o</span><span class="active-letter">r</span> 
-    <span class="active-letter">&nbsp;</span>
-    <a href="https://improvementcarter-debug.github.io/Pixel-Friend" target="_blank" rel="noopener noreferrer">
-      <span class="active-letter">P</span><span class="active-letter">i</span><span class="active-letter">x</span><span class="active-letter">e</span><span class="active-letter">l</span><span class="active-letter">&nbsp;</span><span class="active-letter">F</span><span class
+    <div class="ticker-track">
+      <span class="live-sparkle">✨</span> © <span id="current-year">2026</span> • Breaking News: Built for 
+      <a href="https://improvementcarter-debug.github.io/Pixel-Friend" target="_blank" rel="noopener noreferrer">Pixel Friend</a> 🚀
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Automatically updates the year
+  document.getElementById('current-year').textContent = new Date().getFullYear();
+</script>
 </body>
 </html>
