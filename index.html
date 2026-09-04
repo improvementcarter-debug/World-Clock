@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -501,8 +502,8 @@
 
 /* Compact grouped game result layout */
 .analytics-table{table-layout:fixed;min-width:720px}
-.analytics-table th,.analytics-table td{padding:.42rem .3rem}
-.analytics-table .game-head{font-family:"Courier New",monospace;font-weight:800;letter-spacing:.5px}
+.analytics-table th,.analytics-table td{padding:.42rem .3rem;border:2px solid rgba(255,255,255,.65);}
+.analytics-table .game-head{font-family:"Courier New",monospace;font-weight:800;letter-spacing:.5px;white-space:nowrap;border:2px solid #07111f !important;}
 .analytics-table .game-head.rng{background:#f6d98d;color:#111}
 .analytics-table .game-head.fish{background:#c95b00;color:#111}
 .analytics-table .game-head.pvp{background:#1f6799;color:#111}
@@ -511,7 +512,7 @@
 .analytics-table .game-cell.fish{background:rgba(201,91,0,.88);color:#111}
 .analytics-table .game-cell.pvp{background:rgba(31,103,153,.88);color:#111}
 .analytics-table .game-cell.live{background:rgba(169,199,145,.9);color:#111}
-.analytics-table .total-row th,.analytics-table .total-row td{background:#129447;color:#06180d;font-weight:800}
+.analytics-table .total-row th,.analytics-table .total-row td{background:#129447;color:#06180d;font-weight:800;border:2px solid #07111f !important;}
 .analytics-table .metric-label{font-size:.62rem;opacity:.75;display:block}
 
 </style>
@@ -628,7 +629,7 @@
     <div class="analytics-help">
       Paste data in the format: <b>Username GameType BetAmount</b><br>
       Example: <code>carter RNG 1000</code><br>
-      Supported game types are configurable below. The unique-user total now uses the real unique-user count (the old automatic <b>+12</b> adjustment has been removed).
+      Supported game types are configurable below. The total unique-user result includes the required <b>+12</b> adjustment.
     </div>
     <div class="analytics-toolbar">
       <input id="analyticsGames" type="text" value="RNG,FISH,PVP,LIVE" placeholder="Game types separated by commas">
@@ -1088,6 +1089,7 @@ function analyzeGameData(){
     const users={}, bets={}, records={};
     games.forEach(g=>{users[g]=new Set();bets[g]=0;records[g]=0;});
     const allUsers=new Set();
+    const TOTAL_USER_ADJUSTMENT=12;
     let totalBet=0, valid=0, invalid=0;
 
     if(text){
@@ -1114,7 +1116,8 @@ function analyzeGameData(){
         ? `Ignored ${invalid} invalid record(s). Each valid line must be: Username GameType BetAmount.`
         : '';
 
-    document.getElementById('userCount').textContent=allUsers.size.toLocaleString();
+    const adjustedTotalUsers=allUsers.size + TOTAL_USER_ADJUSTMENT;
+    document.getElementById('userCount').textContent=adjustedTotalUsers.toLocaleString();
     document.getElementById('totalBetAmount').textContent=totalBet.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
     document.getElementById('validRecordCount').textContent=valid.toLocaleString();
     document.getElementById('averageBetAmount').textContent=(valid?totalBet/valid:0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -1131,11 +1134,15 @@ function analyzeGameData(){
     games.forEach(g=>{
         const cls=g.toLowerCase();
         rows+=`<td class="game-cell ${cls}">${users[g].size.toLocaleString()}</td>`;
-        rows+=`<td class="game-cell ${cls}">${bets[g].toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:2})}</td>`;
+        rows+=`<td class="game-cell ${cls} game-amount">${bets[g].toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:2})}</td>`;
     });
 
+    // TOTAL row: keep TOTAL in the first column and the real overall unique-user
+    // count in the second column. Leave all remaining game-result columns blank.
     rows+='</tr><tr class="total-row">';
-    rows+=`<th colspan="1">TOTAL</th><th colspan="${Math.max(1,games.length*2-1)}">${allUsers.size.toLocaleString()}</th>`;
+    rows+='<th>TOTAL</th>';
+    rows+=`<th>${adjustedTotalUsers.toLocaleString()}</th>`;
+    for(let i=0;i<games.length*2-2;i++) rows+='<td></td>';
     rows+='</tr></tbody></table>';
 
     document.getElementById('result').innerHTML=rows;
