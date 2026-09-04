@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -481,7 +482,39 @@
 
         #taskNameInput { width:100%; margin-bottom:10px; font-family:'Share Tech Mono', monospace; }
         .task-name-display input { border:1px solid var(--accent-cyan); background:rgba(0,240,255,.06); color:#fff; padding:8px; border-radius:6px; }
-    </style>
+    
+/* ===== GAME DATA ANALYTICS EXTENSION ===== */
+.analytics-card{max-width:1100px;margin:0 auto}
+.analytics-toolbar{display:flex;gap:.7rem;flex-wrap:wrap;margin:1rem 0}
+.analytics-toolbar input,.analytics-toolbar select{min-height:42px}
+.analytics-textarea{width:100%;min-height:220px;resize:vertical;background:rgba(5,11,20,.85);border:1px solid rgba(0,240,255,.3);color:#fff;padding:.9rem;border-radius:7px;font-family:'Share Tech Mono',monospace;font-size:.95rem}
+.analytics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.8rem;margin:1rem 0}
+.analytics-stat{background:rgba(5,11,20,.65);border:1px solid rgba(0,240,255,.22);border-radius:7px;padding:.9rem}
+.analytics-stat span{display:block;color:var(--text-dim);font-size:.7rem}.analytics-stat strong{display:block;font-family:Orbitron,sans-serif;font-size:1.35rem;color:#fff;margin-top:.35rem}
+.analytics-table-wrap{overflow:auto;margin-top:1rem}
+.analytics-table{width:100%;border-collapse:collapse;background:rgba(5,11,20,.6)}
+.analytics-table th,.analytics-table td{padding:.7rem;border:1px solid rgba(0,240,255,.18);text-align:center}
+.analytics-table th{color:#fff;background:rgba(0,240,255,.16);font-family:Orbitron,sans-serif;font-size:.72rem}
+.analytics-help{color:var(--text-dim);font-size:.82rem;line-height:1.6}
+.analytics-warning{color:#ffcc00;font-size:.8rem;margin-top:.7rem}
+
+
+/* Compact grouped game result layout */
+.analytics-table{table-layout:fixed;min-width:720px}
+.analytics-table th,.analytics-table td{padding:.42rem .3rem}
+.analytics-table .game-head{font-family:"Courier New",monospace;font-weight:800;letter-spacing:.5px}
+.analytics-table .game-head.rng{background:#f6d98d;color:#111}
+.analytics-table .game-head.fish{background:#c95b00;color:#111}
+.analytics-table .game-head.pvp{background:#1f6799;color:#111}
+.analytics-table .game-head.live{background:#a9c791;color:#111}
+.analytics-table .game-cell.rng{background:rgba(246,217,141,.92);color:#111}
+.analytics-table .game-cell.fish{background:rgba(201,91,0,.88);color:#111}
+.analytics-table .game-cell.pvp{background:rgba(31,103,153,.88);color:#111}
+.analytics-table .game-cell.live{background:rgba(169,199,145,.9);color:#111}
+.analytics-table .total-row th,.analytics-table .total-row td{background:#129447;color:#06180d;font-weight:800}
+.analytics-table .metric-label{font-size:.62rem;opacity:.75;display:block}
+
+</style>
 </head>
 <body>
 
@@ -503,6 +536,7 @@
 <button class="tab-btn" onclick="switchView('stopwatch', this)">⏱️ Stopwatch</button>
 <button class="tab-btn" onclick="switchView('timer', this)">⏳ Countdown</button>
 <button class="tab-btn" onclick="switchView('notes', this)">📝 Tasks & Logs</button>
+<button class="tab-btn" onclick="switchView('analytics', this)">🎮 Game Analytics</button>
 </div>
 
 <div id="dashboard" class="view-section active">
@@ -586,7 +620,38 @@
         </div>
     </div>
 
-    <!-- VIEW 5: TASKS & NOTES -->
+    
+<!-- VIEW 6: GAME DATA ANALYTICS -->
+<div id="analytics" class="view-section">
+  <div class="tool-card analytics-card">
+    <h2>TCG PH Game Data Analytics</h2>
+    <div class="analytics-help">
+      Paste data in the format: <b>Username GameType BetAmount</b><br>
+      Example: <code>carter RNG 1000</code><br>
+      Supported game types are configurable below. The unique-user total now uses the real unique-user count (the old automatic <b>+12</b> adjustment has been removed).
+    </div>
+    <div class="analytics-toolbar">
+      <input id="analyticsGames" type="text" value="RNG,FISH,PVP,LIVE" placeholder="Game types separated by commas">
+      <button class="btn" onclick="analyzeGameData()">Analyze Data</button>
+      <button class="btn" onclick="exportGameReport()">Export CSV</button>
+      <button class="btn btn-danger" onclick="clearGameData()">Clear</button>
+    </div>
+    <textarea id="inputData" class="analytics-textarea" placeholder="Username GameType BetAmount
+carter RNG 1000
+alice FISH 2500
+carter LIVE 500"></textarea>
+    <div id="analyticsWarning" class="analytics-warning"></div>
+    <div class="analytics-grid">
+      <div class="analytics-stat"><span>TOTAL UNIQUE USERS</span><strong id="userCount">0</strong></div>
+      <div class="analytics-stat"><span>TOTAL BET AMOUNT</span><strong id="totalBetAmount">0.00</strong></div>
+      <div class="analytics-stat"><span>VALID RECORDS</span><strong id="validRecordCount">0</strong></div>
+      <div class="analytics-stat"><span>AVERAGE BET</span><strong id="averageBetAmount">0.00</strong></div>
+    </div>
+    <div class="analytics-table-wrap"><div id="result"></div></div>
+  </div>
+</div>
+
+<!-- VIEW 5: TASKS & NOTES -->
 <div id="notes" class="view-section">
 <div class="tool-card" style="max-width: 1100px; margin: 0 auto;">
 <h2>Terminal Tasks & Logs // V2</h2>
@@ -650,15 +715,6 @@
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         }, { once: true });
 
-        function startAlarmRinging(timeStr) {
-            document.getElementById('modalTimeDisplay').textContent = `Target Trigger: ${timeStr}`;
-            document.getElementById('alarmModal').style.display = 'flex';
-        }
-
-        function stopAlarmRinging() {
-            document.getElementById('alarmModal').style.display = 'none';
-        }
-
         const timeZones = [
             { name: "Cambodia (KH)", zone: "Asia/Phnom_Penh" },
             { name: "China (CN)", zone: "Asia/Shanghai" },
@@ -693,34 +749,156 @@
             clockContainer.appendChild(card);
         });
 
-        let alarms = [];
-        function addAlarm() {
-            const val = document.getElementById('alarmInput').value;
-            if (!val || alarms.includes(val)) return;
-            alarms.push(val);
-            renderAlarms();
-            document.getElementById('alarmInput').value = '';
+        // ===== ALARM CLOCK =====
+        // Alarms are stored locally and checked every second.
+        let alarms = JSON.parse(localStorage.getItem('pixel_world_clock_alarms') || '[]');
+        let alarmSoundTimer = null;
+        let ringingAlarmId = null;
+        let lastTriggeredMinute = '';
+
+        function saveAlarms() {
+            localStorage.setItem('pixel_world_clock_alarms', JSON.stringify(alarms));
         }
 
-        function removeAlarm(index) {
-            alarms.splice(index, 1);
+        function addAlarm() {
+            const input = document.getElementById('alarmInput');
+            const val = input.value;
+            if (!val) {
+                alert('Please select an alarm time first.');
+                input.focus();
+                return;
+            }
+
+            if (alarms.some(a => a.time === val)) {
+                alert('An alarm for this time already exists.');
+                return;
+            }
+
+            alarms.push({
+                id: Date.now(),
+                time: val,
+                enabled: true
+            });
+            alarms.sort((a, b) => a.time.localeCompare(b.time));
+            saveAlarms();
+            renderAlarms();
+            input.value = '';
+        }
+
+        function removeAlarm(id) {
+            alarms = alarms.filter(a => a.id !== id);
+            saveAlarms();
+            renderAlarms();
+        }
+
+        function toggleAlarm(id) {
+            const alarm = alarms.find(a => a.id === id);
+            if (!alarm) return;
+            alarm.enabled = !alarm.enabled;
+            saveAlarms();
             renderAlarms();
         }
 
         function renderAlarms() {
             const list = document.getElementById('alarmList');
+            if (!list) return;
+
             if (alarms.length === 0) {
                 list.innerHTML = `<div style="color: var(--text-dim); text-align: center; padding: 1rem;">No active alarms set.</div>`;
                 return;
             }
+
             list.innerHTML = '';
-            alarms.forEach((time, index) => {
+            alarms.forEach(alarm => {
                 const item = document.createElement('div');
                 item.className = 'list-item';
-                item.innerHTML = `<span style="font-family:'Orbitron'; font-weight:700; color:#fff;">${time}</span><button class="btn btn-danger" style="padding: 0.2rem 0.5rem; font-size:0.7rem;" onclick="removeAlarm(${index})">Delete</button>`;
+                const state = alarm.enabled ? 'ON' : 'OFF';
+                const stateColor = alarm.enabled ? 'var(--success)' : 'var(--text-dim)';
+                item.innerHTML = `
+                    <div>
+                        <div style="font-family:'Orbitron'; font-weight:700; color:#fff;">${alarm.time}</div>
+                        <div style="font-size:.7rem;color:${stateColor};margin-top:3px;">● ${state}</div>
+                    </div>
+                    <div style="display:flex;gap:.4rem;">
+                        <button class="btn" style="padding:0.2rem 0.5rem;font-size:0.7rem;" onclick="toggleAlarm(${alarm.id})">${alarm.enabled ? 'Disable' : 'Enable'}</button>
+                        <button class="btn btn-danger" style="padding:0.2rem 0.5rem;font-size:0.7rem;" onclick="removeAlarm(${alarm.id})">Delete</button>
+                    </div>`;
                 list.appendChild(item);
             });
         }
+
+        function ensureAudioContext() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume().catch(() => {});
+            }
+            return audioCtx;
+        }
+
+        function playAlarmBeep() {
+            try {
+                const ctx = ensureAudioContext();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(880, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.18);
+                gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.18, ctx.currentTime + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.32);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.34);
+            } catch (e) {
+                console.warn('Alarm audio requires one user interaction with the page.', e);
+            }
+        }
+
+        function startAlarmRinging(timeStr, alarmId = null) {
+            ringingAlarmId = alarmId;
+            document.getElementById('modalTimeDisplay').textContent = `Alarm Time: ${timeStr}`;
+            document.getElementById('alarmModal').style.display = 'flex';
+
+            if ('Notification' in window && Notification.permission === 'granted') {
+                try {
+                    new Notification('⏰ Alarm', { body: `Alarm set for ${timeStr}` });
+                } catch (e) {}
+            }
+
+            playAlarmBeep();
+            clearInterval(alarmSoundTimer);
+            alarmSoundTimer = setInterval(playAlarmBeep, 750);
+        }
+
+        function stopAlarmRinging() {
+            clearInterval(alarmSoundTimer);
+            alarmSoundTimer = null;
+            ringingAlarmId = null;
+            document.getElementById('alarmModal').style.display = 'none';
+        }
+
+        function checkAlarms() {
+            if (!alarms.length || ringingAlarmId !== null) return;
+
+            const now = new Date();
+            const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            const minuteKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}-${currentTime}`;
+
+            if (minuteKey === lastTriggeredMinute) return;
+
+            const alarm = alarms.find(a => a.enabled && a.time === currentTime);
+            if (alarm) {
+                lastTriggeredMinute = minuteKey;
+                startAlarmRinging(alarm.time, alarm.id);
+            }
+        }
+
+        renderAlarms();
+        setInterval(checkAlarms, 1000);
+        checkAlarms();
 
         let swTimer = null; let swTimeMs = 0; let laps = [];
         function formatStopwatch(ms) {
@@ -892,6 +1070,107 @@
         }
         function checkDueReminders(){const now=Date.now();notes.forEach(n=>{if(!n.dueDate||n.status==='Completed'||n.notified)return;const due=new Date(n.dueDate).getTime();if(due<=now){n.notified=true;persistNotes();const title='Task reminder';const body=stripHtml(n.content).slice(0,120)||'A task is due now.';if('Notification'in window&&Notification.permission==='granted')new Notification(title,{body});else notifyTask('⚠️ Due now: '+body);}});}
         setInterval(checkDueReminders,30000); checkDueReminders(); renderNotes();
+
+
+// ===== GAME DATA ANALYTICS =====
+function parseGameAmount(raw){
+    const cleaned=String(raw||'').replace(/[$,\s]/g,'');
+    const n=Number(cleaned);
+    return Number.isFinite(n) ? n : NaN;
+}
+function analyzeGameData(){
+    const text=document.getElementById('inputData').value.trim();
+    const games=document.getElementById('analyticsGames').value
+        .split(',').map(x=>x.trim().toUpperCase()).filter(Boolean);
+    const warning=document.getElementById('analyticsWarning');
+    if(!games.length){ warning.textContent='Please enter at least one game type.'; return; }
+
+    const users={}, bets={}, records={};
+    games.forEach(g=>{users[g]=new Set();bets[g]=0;records[g]=0;});
+    const allUsers=new Set();
+    let totalBet=0, valid=0, invalid=0;
+
+    if(text){
+        text.split(/\r?\n/).forEach(line=>{
+            const p=line.trim().split(/\s+/);
+            if(p.length<3 || !line.trim()){ if(line.trim()) invalid++; return; }
+
+            const user=p[0];
+            const game=p[1].toUpperCase();
+            const amount=parseGameAmount(p[2]);
+
+            if(!users[game] || !Number.isFinite(amount)){ invalid++; return; }
+
+            users[game].add(user);
+            allUsers.add(user);
+            bets[game]+=amount;
+            records[game]++;
+            totalBet+=amount;
+            valid++;
+        });
+    }
+
+    warning.textContent=invalid
+        ? `Ignored ${invalid} invalid record(s). Each valid line must be: Username GameType BetAmount.`
+        : '';
+
+    document.getElementById('userCount').textContent=allUsers.size.toLocaleString();
+    document.getElementById('totalBetAmount').textContent=totalBet.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+    document.getElementById('validRecordCount').textContent=valid.toLocaleString();
+    document.getElementById('averageBetAmount').textContent=(valid?totalBet/valid:0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+
+    // Compact layout: every game has exactly 2 result columns, matching the supplied sample:
+    // 1) unique users, 2) total bet amount.
+    let rows='<table class="analytics-table"><thead><tr>';
+    games.forEach(g=>{
+        const cls=g.toLowerCase();
+        rows+=`<th colspan="2" class="game-head ${cls}">${escImport(g)}</th>`;
+    });
+    rows+='</tr></thead><tbody><tr>';
+
+    games.forEach(g=>{
+        const cls=g.toLowerCase();
+        rows+=`<td class="game-cell ${cls}">${users[g].size.toLocaleString()}</td>`;
+        rows+=`<td class="game-cell ${cls}">${bets[g].toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:2})}</td>`;
+    });
+
+    rows+='</tr><tr class="total-row">';
+    rows+=`<th colspan="1">TOTAL</th><th colspan="${Math.max(1,games.length*2-1)}">${allUsers.size.toLocaleString()}</th>`;
+    rows+='</tr></tbody></table>';
+
+    document.getElementById('result').innerHTML=rows;
+    localStorage.setItem('pixel_game_analytics_data',document.getElementById('inputData').value);
+    localStorage.setItem('pixel_game_analytics_games',document.getElementById('analyticsGames').value);
+}
+
+function clearGameData(){
+    document.getElementById('inputData').value='';
+    document.getElementById('analyticsWarning').textContent='';
+    localStorage.removeItem('pixel_game_analytics_data');
+    analyzeGameData();
+}
+function exportGameReport(){
+    const text=document.getElementById('inputData').value.trim();
+    if(!text){ alert('No game data to export.'); return; }
+    const games=document.getElementById('analyticsGames').value.split(',').map(x=>x.trim().toUpperCase()).filter(Boolean);
+    const lines=['Username,GameType,BetAmount'];
+    text.split(/\r?\n/).forEach(line=>{
+        const p=line.trim().split(/\s+/);
+        if(p.length>=3 && games.includes(p[1].toUpperCase()) && Number.isFinite(parseGameAmount(p[2]))){
+            lines.push([p[0],p[1].toUpperCase(),parseGameAmount(p[2])].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(','));
+        }
+    });
+    downloadFile(lines.join('\n'),'game-data-report.csv','text/csv');
+}
+document.addEventListener('DOMContentLoaded',()=>{
+    const savedData=localStorage.getItem('pixel_game_analytics_data');
+    const savedGames=localStorage.getItem('pixel_game_analytics_games');
+    if(savedData!==null) document.getElementById('inputData').value=savedData;
+    if(savedGames) document.getElementById('analyticsGames').value=savedGames;
+    document.getElementById('inputData').addEventListener('input',analyzeGameData);
+    document.getElementById('analyticsGames').addEventListener('input',analyzeGameData);
+    analyzeGameData();
+});
 
         function masterTick() {
             const now = new Date();
