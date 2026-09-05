@@ -1259,7 +1259,7 @@ const __oldResetCountdown=window.resetCountdown;const __oldStartCountdown=window
 setInterval(()=>{const d=document.getElementById('countdownDisplay');if(d&&/^00:00:00$/.test(d.textContent.trim())&&!d.dataset.alerted){d.dataset.alerted='1';playCountdownAlert();}else if(d&&!/^00:00:00$/.test(d.textContent.trim()))d.dataset.alerted='';},500);
 document.addEventListener('DOMContentLoaded',()=>{const cards=[...document.querySelectorAll('.dashboard .clock-card,.dashboard-clock,.mini-clock')].slice(0,3);cards.forEach(c=>{c.classList.add('pinned-clock');c.title='Click to move this pinned time to the first position';c.addEventListener('click',()=>c.parentElement&&c.parentElement.insertBefore(c,c.parentElement.firstElementChild));});const cd=document.getElementById('countdownInput')||document.getElementById('countdownSeconds')||document.getElementById('countdownMinutes');if(cd){const b=document.createElement('button');b.className='btn';b.textContent='⏱ Set 2 Minutes';b.onclick=()=>{cd.value=cd.id==='countdownMinutes'?'2':'120';};cd.parentElement.appendChild(b);}});
 </script>
-\n<script id="cc-reliability-upgrade">
+<script id="cc-reliability-upgrade">
 (function(){
 const PIN_KEY='command_center_pinned_timezones_v2'; const DEFAULT=['UTC','Asia/Phnom_Penh','Asia/Manila'];
 function pins(){try{const x=JSON.parse(localStorage.getItem(PIN_KEY));return Array.isArray(x)?x:[...DEFAULT]}catch(e){return [...DEFAULT]}}
