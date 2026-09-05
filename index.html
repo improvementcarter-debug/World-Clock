@@ -523,6 +523,10 @@ footer{margin-left:0!important;padding:50px 0 10px!important}
 <style id="cc-upgrade">
 .fullscreen-task-editor{position:fixed;inset:0;z-index:99999;background:#050b14;display:none;padding:24px;overflow:auto}.fullscreen-task-editor.open{display:block}.task-editor-shell{width:min(1250px,96vw);margin:auto;background:#0b1523;border:1px solid rgba(0,240,255,.45);border-radius:16px;padding:28px;min-height:calc(100vh - 48px)}.task-editor-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.task-editor-grid .wide{grid-column:1/-1}.task-editor-shell input,.task-editor-shell select{width:100%;min-height:50px;font-size:18px;padding:10px}.fullscreen-content{min-height:52vh;border:1px solid rgba(0,240,255,.35);border-radius:10px;padding:18px;font-size:18px;line-height:1.7;background:#081321;color:#fff}.task-editor-actions{display:flex;justify-content:flex-end;gap:12px;margin-top:18px}.pinned-clock{cursor:pointer}.pinned-clock:hover{outline:1px solid var(--accent-cyan)}@media(max-width:800px){.fullscreen-task-editor{padding:8px}.task-editor-shell{width:100%;padding:16px}.task-editor-grid{grid-template-columns:1fr}.fullscreen-content{min-height:45vh}}
 </style>
+
+<style id="cc-upgrade-style">
+.cc-pin-btn{padding:.28rem .5rem;font-size:.62rem;margin-right:8px}.cc-pinned-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}.cc-pinned-card{background:rgba(5,11,20,.72);border:1px solid rgba(0,240,255,.28);border-radius:10px;padding:16px;min-height:130px}.cc-pinned-top{display:flex;justify-content:space-between;gap:8px;align-items:center;color:#fff;font-family:Orbitron,sans-serif;font-size:.75rem}.cc-pinned-time{font-family:Orbitron,sans-serif;font-size:1.8rem;font-weight:900;color:var(--accent-cyan);margin:18px 0 10px}.cc-pinned-meta{color:var(--text-dim);font-size:.78rem}.cc-empty-pins{color:var(--text-dim);padding:22px;border:1px dashed rgba(0,240,255,.25);border-radius:10px}.cc-timer-controls{margin-top:18px;padding:16px;border:1px solid rgba(0,240,255,.25);border-radius:10px;background:rgba(0,240,255,.035)}.cc-timer-title{font-family:Orbitron,sans-serif;color:#fff;margin-bottom:12px}.cc-timer-buttons{display:flex;gap:8px;flex-wrap:wrap}.cc-repeat-label{display:flex;gap:8px;align-items:center;margin-top:14px;color:var(--text-dim)}@media(max-width:700px){.cc-pinned-grid{grid-template-columns:1fr}.cc-pinned-time{font-size:1.5rem}}
+</style>
 </head>
 <body>
 
@@ -557,6 +561,7 @@ footer{margin-left:0!important;padding:50px 0 10px!important}
       <div class="stat-card"><span>📈 PROGRESS</span><strong id="statPercent">0%</strong></div>
     </div>
     <div class="tool-card"><h2>Task Progress</h2><div class="progress-track"><div id="taskProgressBar" class="progress-bar"></div></div><div id="dueSummary" class="due-summary">No upcoming due dates.</div></div>
+<div class="tool-card" id="ccPinnedPanel"><h2>📌 Pinned World Clocks</h2><div style="color:var(--text-dim);font-size:.82rem;margin-bottom:14px;">Pin or unpin any timezone from World Clock.</div><div id="ccPinnedClockGrid" class="cc-pinned-grid"></div></div>
   </div>
 </div>
 
@@ -714,7 +719,10 @@ footer{margin-left:0!important;padding:50px 0 10px!important}
             card.innerHTML = `
                 <div class="card-header">
                     <div class="country-name">${item.name}</div>
-                    <div class="status-icon" id="icon-${index}">☀️</div>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <button type="button" class="btn cc-pin-btn" id="cc-pin-${index}" onclick="ccTogglePin('${item.zone}')">📍 Pin</button>
+                        <div class="status-icon" id="icon-${index}">☀️</div>
+                    </div>
                 </div>
                 <div class="time-wrapper">
                     <div class="time" id="time-${index}">00:00:00</div>
@@ -1251,5 +1259,26 @@ const __oldResetCountdown=window.resetCountdown;const __oldStartCountdown=window
 setInterval(()=>{const d=document.getElementById('countdownDisplay');if(d&&/^00:00:00$/.test(d.textContent.trim())&&!d.dataset.alerted){d.dataset.alerted='1';playCountdownAlert();}else if(d&&!/^00:00:00$/.test(d.textContent.trim()))d.dataset.alerted='';},500);
 document.addEventListener('DOMContentLoaded',()=>{const cards=[...document.querySelectorAll('.dashboard .clock-card,.dashboard-clock,.mini-clock')].slice(0,3);cards.forEach(c=>{c.classList.add('pinned-clock');c.title='Click to move this pinned time to the first position';c.addEventListener('click',()=>c.parentElement&&c.parentElement.insertBefore(c,c.parentElement.firstElementChild));});const cd=document.getElementById('countdownInput')||document.getElementById('countdownSeconds')||document.getElementById('countdownMinutes');if(cd){const b=document.createElement('button');b.className='btn';b.textContent='⏱ Set 2 Minutes';b.onclick=()=>{cd.value=cd.id==='countdownMinutes'?'2':'120';};cd.parentElement.appendChild(b);}});
 </script>
-</body>
+\n<script id="cc-reliability-upgrade">
+(function(){
+const PIN_KEY='command_center_pinned_timezones_v2'; const DEFAULT=['UTC','Asia/Phnom_Penh','Asia/Manila'];
+function pins(){try{const x=JSON.parse(localStorage.getItem(PIN_KEY));return Array.isArray(x)?x:[...DEFAULT]}catch(e){return [...DEFAULT]}}
+function save(x){localStorage.setItem(PIN_KEY,JSON.stringify(x))}
+window.ccTogglePin=function(zone){let p=pins(),i=p.indexOf(zone);if(i>=0)p.splice(i,1);else p.push(zone);save(p);refreshPins();renderPinned()}
+function refreshPins(){timeZones.forEach((item,i)=>{const b=document.getElementById('cc-pin-'+i);if(!b)return;b.textContent=pins().includes(item.zone)?'📌 Unpin':'📍 Pin'})}
+function addPinButtons(){timeZones.forEach((item,i)=>{const card=document.getElementById('time-'+i)?.closest('.clock-card');if(!card||card.querySelector('.cc-pin-btn'))return;const h=card.querySelector('.card-header'),icon=h?.querySelector('.status-icon');if(!h||!icon)return;const b=document.createElement('button');b.type='button';b.id='cc-pin-'+i;b.className='btn cc-pin-btn';b.onclick=()=>ccTogglePin(item.zone);h.insertBefore(b,icon)});refreshPins()}
+function renderPinned(){const host=document.getElementById('ccPinnedClockGrid');if(!host)return;host.innerHTML='';const p=pins();if(!p.length){host.innerHTML='<div class="cc-empty-pins">No clocks pinned. Open World Clock and press Pin.</div>';return}p.forEach(zone=>{const item=timeZones.find(x=>x.zone===zone);if(!item)return;const c=document.createElement('div');c.className='cc-pinned-card';c.dataset.zone=zone;c.innerHTML='<div class="cc-pinned-top"><span>'+item.name+'</span><button class="btn" type="button">📌 Unpin</button></div><div class="cc-pinned-time">--:--:--</div><div class="cc-pinned-meta">Loading…</div>';c.querySelector('button').onclick=()=>ccTogglePin(zone);host.appendChild(c)});updatePinned()}
+function updatePinned(){const now=new Date();document.querySelectorAll('.cc-pinned-card').forEach(c=>{const zone=c.dataset.zone;const t=new Intl.DateTimeFormat('en-US',{timeZone:zone,hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(now);const d=new Intl.DateTimeFormat('en-US',{timeZone:zone,weekday:'short',month:'short',day:'2-digit'}).format(now);c.querySelector('.cc-pinned-time').textContent=t;c.querySelector('.cc-pinned-meta').textContent=d+' • '+getUtcOffsetLabel(zone,now)})}
+let interval=null,end=0,remaining=0,running=false;
+function read(){return Math.floor(Math.max(0,+document.getElementById('timerHours').value||0)*3600+Math.max(0,+document.getElementById('timerMinutes').value||0)*60+Math.max(0,+document.getElementById('timerSeconds').value||0))}
+function fmt(n){n=Math.max(0,Math.floor(n));return String(Math.floor(n/3600)).padStart(2,'0')+':'+String(Math.floor(n%3600/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0')}
+function show(n){const d=document.getElementById('timerDisplay');if(d){d.style.display='block';d.textContent=fmt(n)}}
+function sound(){try{const C=window.AudioContext||window.webkitAudioContext;audioCtx=audioCtx||new C();for(let i=0;i<5;i++){const o=audioCtx.createOscillator(),g=audioCtx.createGain(),t=audioCtx.currentTime+i*.32;o.frequency.value=i%2?1320:880;o.type='square';o.connect(g);g.connect(audioCtx.destination);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.18,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+.24);o.start(t);o.stop(t+.26)}}catch(e){}}
+window.startTimer=function(){if(running)return;if(remaining<=0)remaining=read();if(remaining<=0){alert('Please set a countdown time greater than zero.');return}running=true;end=Date.now()+remaining*1000;const b=document.getElementById('timerStartBtn');if(b)b.textContent='Running…';clearInterval(interval);interval=setInterval(()=>{remaining=Math.max(0,Math.ceil((end-Date.now())/1000));show(remaining);if(remaining<=0){clearInterval(interval);running=false;if(b)b.textContent='Start Timer';sound();if('Notification'in window&&Notification.permission==='granted')try{new Notification('⏳ Countdown Finished',{body:'Your countdown timer has reached zero.'})}catch(e){};if(document.getElementById('ccRepeatTimer')?.checked){const n=read();if(n>0)setTimeout(()=>{remaining=n;startTimer()},1200)}}},200);show(remaining)}
+window.resetTimer=function(){clearInterval(interval);running=false;remaining=read();const b=document.getElementById('timerStartBtn');if(b)b.textContent='Start Timer';show(remaining)}
+function addTimer(){const card=document.querySelector('#timer .tool-card');if(!card||document.getElementById('ccTimerControls'))return;const box=document.createElement('div');box.id='ccTimerControls';box.className='cc-timer-controls';box.innerHTML='<div class="cc-timer-title">🔔 Countdown Alarm Options</div><div class="cc-timer-buttons"><button class="btn" data-h="0" data-m="2" data-s="0">2 Minutes</button><button class="btn" data-h="0" data-m="5" data-s="0">5 Minutes</button><button class="btn" data-h="0" data-m="30" data-s="0">30 Minutes</button><button class="btn" data-h="1" data-m="0" data-s="0">1 Hour</button><button class="btn" data-h="2" data-m="0" data-s="0">2 Hours</button></div><label class="cc-repeat-label"><input id="ccRepeatTimer" type="checkbox"> Repeat automatically after the alarm</label>';card.appendChild(box);box.querySelectorAll('[data-h]').forEach(b=>b.onclick=()=>{document.getElementById('timerHours').value=b.dataset.h;document.getElementById('timerMinutes').value=b.dataset.m;document.getElementById('timerSeconds').value=b.dataset.s;remaining=read();show(remaining)});remaining=read();show(remaining)}
+function init(){addPinButtons();renderPinned();addTimer();show(read())}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();setInterval(()=>{updatePinned();refreshPins()},1000);
+})();
+</script>\n</body>
 </html>
