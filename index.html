@@ -500,12 +500,12 @@
 
 </style>
 
-<style id="command-center">
-/* ===== COMMAND CENTER  — PC & LAPTOP ===== */
+<style id="command-center-v2">
+/* ===== COMMAND CENTER — PC & LAPTOP ===== */
 body{padding:0 28px 30px 292px;align-items:stretch;background:linear-gradient(135deg,#050b14 0%,#071323 55%,#080b18 100%)}
 header{margin:0;padding:28px 0 18px;text-align:left;max-width:none}header h1{font-size:2.05rem;letter-spacing:2px}.subtitle{letter-spacing:1.5px}
 .nav-tabs{position:fixed;z-index:50;left:0;top:0;bottom:0;width:252px;margin:0;padding:24px 16px;background:rgba(4,10,19,.94);border-right:1px solid rgba(0,240,255,.25);display:flex;flex-direction:column;align-items:stretch;gap:8px;overflow:auto;backdrop-filter:blur(18px);box-shadow:12px 0 40px rgba(0,0,0,.25)}
-.nav-tabs::before{content:'COMMAND CENTER V2';font-family:Orbitron,sans-serif;font-size:.78rem;letter-spacing:.14em;color:var(--accent-cyan);padding:10px 12px 18px;border-bottom:1px solid rgba(0,240,255,.16);margin-bottom:6px}
+.nav-tabs::before{content:'COMMAND CENTER';font-family:Orbitron,sans-serif;font-size:.78rem;letter-spacing:.14em;color:var(--accent-cyan);padding:10px 12px 18px;border-bottom:1px solid rgba(0,240,255,.16);margin-bottom:6px}
 .tab-btn{width:100%;text-align:left;min-height:48px;border-radius:8px;padding:0 14px;font-size:.86rem;display:flex;align-items:center;gap:10px;border:1px solid transparent;background:transparent}
 .tab-btn:hover{background:rgba(0,240,255,.08);border-color:rgba(0,240,255,.2);transform:none}.tab-btn.active{background:linear-gradient(90deg,rgba(0,240,255,.16),rgba(157,0,255,.12));border-color:rgba(0,240,255,.35)}
 .view-section{max-width:1450px;margin:0 auto;width:100%}.tool-card,.clock-card{border-radius:12px}.clock-container{grid-template-columns:repeat(4,minmax(220px,1fr));gap:16px}.clock-card{padding:18px;min-height:150px}.time{font-size:2rem}.country-name{font-size:.82rem}
@@ -518,6 +518,10 @@ footer{margin-left:0!important;padding:50px 0 10px!important}
 @media(max-width:1200px){body{padding-left:230px;padding-right:18px}.nav-tabs{width:205px}.clock-container{grid-template-columns:repeat(3,minmax(220px,1fr))}.task-stats{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:900px){body{padding:0 16px 30px}.nav-tabs{position:sticky;top:0;width:calc(100% + 32px);margin-left:-16px;height:auto;max-height:none;flex-direction:row;padding:10px 12px;overflow:auto;border-right:0;border-bottom:1px solid rgba(0,240,255,.25)}.nav-tabs::before{display:none}.tab-btn{min-width:max-content;width:auto}.cc2-top{grid-template-columns:1fr}.clock-container{grid-template-columns:repeat(2,minmax(220px,1fr))}}
 @media(max-width:600px){header h1{font-size:1.55rem}.clock-container,.cc2-clock-grid,.cc2-quick{grid-template-columns:1fr}.task-stats{grid-template-columns:1fr 1fr}.clock-card{min-height:auto}}
+</style>
+
+<style id="cc-upgrade">
+.fullscreen-task-editor{position:fixed;inset:0;z-index:99999;background:#050b14;display:none;padding:24px;overflow:auto}.fullscreen-task-editor.open{display:block}.task-editor-shell{width:min(1250px,96vw);margin:auto;background:#0b1523;border:1px solid rgba(0,240,255,.45);border-radius:16px;padding:28px;min-height:calc(100vh - 48px)}.task-editor-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.task-editor-grid .wide{grid-column:1/-1}.task-editor-shell input,.task-editor-shell select{width:100%;min-height:50px;font-size:18px;padding:10px}.fullscreen-content{min-height:52vh;border:1px solid rgba(0,240,255,.35);border-radius:10px;padding:18px;font-size:18px;line-height:1.7;background:#081321;color:#fff}.task-editor-actions{display:flex;justify-content:flex-end;gap:12px;margin-top:18px}.pinned-clock{cursor:pointer}.pinned-clock:hover{outline:1px solid var(--accent-cyan)}@media(max-width:800px){.fullscreen-task-editor{padding:8px}.task-editor-shell{width:100%;padding:16px}.task-editor-grid{grid-template-columns:1fr}.fullscreen-content{min-height:45vh}}
 </style>
 </head>
 <body>
@@ -698,6 +702,7 @@ footer{margin-left:0!important;padding:50px 0 10px!important}
             { name: "Mexico (MX)", zone: "America/Mexico_City" },
             { name: "Indonesia (ID)", zone: "Asia/Jakarta" },
             { name: "Malaysia (MY)", zone: "Asia/Kuala_Lumpur" },
+            { name: "Vietnam (VN)", zone: "Asia/Ho_Chi_Minh" },
             { name: "Myanmar (MM)", zone: "Asia/Yangon" },
             { name: "Madagascar (MG)", zone: "Indian/Antananarivo" }
         ];
@@ -996,7 +1001,7 @@ footer{margin-left:0!important;padding:50px 0 10px!important}
             const grid=document.getElementById('notesGrid'); if(!grid)return; const q=(document.getElementById('taskSearch')?.value||'').toLowerCase(), fs=document.getElementById('filterStatus')?.value||'All', fp=document.getElementById('filterPriority')?.value||'All';
             const filtered=notes.filter(n=>{const txt=((n.taskName||'')+' '+stripHtml(n.content)+' '+(n.status||'')+' '+(n.priority||'')).toLowerCase();return (!q||txt.includes(q))&&(fs==='All'||n.status===fs)&&(fp==='All'||n.priority===fp);});
             if(!filtered.length){grid.innerHTML='<div style="color:var(--text-dim);text-align:center;grid-column:1/-1;padding:1rem;">No matching records found.</div>';updateTaskDashboard();return;}
-            const now=Date.now(); grid.innerHTML=filtered.map(item=>{let bc=item.status==='Completed'?'status-completed':item.status==='In Progress'?'status-progress':'status-pending'; const due=item.dueDate?new Date(item.dueDate):null; const overdue=due&&due.getTime()<now&&item.status!=='Completed'; return `<div class="note-card" id="note-card-${item.id}"><div class="task-name-display" style="font-family:Orbitron,sans-serif;color:#00f0ff;font-weight:700;font-size:.9rem;margin-bottom:8px;letter-spacing:.04em;">📝 ${escImport(item.taskName||'Untitled Task')}</div><div class="note-content-display" data-editing="false">${item.content}</div><div class="status-badge-container"><div class="task-meta"><span class="status-badge ${bc}">${item.status}</span><span class="priority-badge priority-${item.priority||'Medium'}">${item.priority||'Medium'}</span></div><div class="due-label ${overdue?'overdue':''}">${due?`Due: ${due.toLocaleString()}`:'No due date'}</div></div><div class="note-footer"><span>${item.date}</span><div class="note-actions"><button class="btn edit-btn-action" style="padding:.15rem .4rem;font-size:.65rem;" onclick="toggleEditNote(${item.id})">Edit</button><button class="btn btn-danger" style="padding:.15rem .4rem;font-size:.65rem;" onclick="deleteNote(${item.id})">Delete</button></div></div></div>`;}).join(''); updateTaskDashboard();
+            const now=Date.now(); grid.innerHTML=filtered.map(item=>{let bc=item.status==='Completed'?'status-completed':item.status==='In Progress'?'status-progress':'status-pending'; const due=item.dueDate?new Date(item.dueDate):null; const overdue=due&&due.getTime()<now&&item.status!=='Completed'; return `<div class="note-card" id="note-card-${item.id}"><div class="task-name-display" style="font-family:Orbitron,sans-serif;color:#00f0ff;font-weight:700;font-size:.9rem;margin-bottom:8px;letter-spacing:.04em;">📝 ${escImport(item.taskName||'Untitled Task')}</div><div class="note-content-display" data-editing="false">${item.content}</div><div class="status-badge-container"><div class="task-meta"><span class="status-badge ${bc}">${item.status}</span><span class="priority-badge priority-${item.priority||'Medium'}">${item.priority||'Medium'}</span></div><div class="due-label ${overdue?'overdue':''}">${due?`Due: ${due.toLocaleString()}`:'No due date'}</div></div><div class="note-footer"><span>${item.date}</span><div class="note-actions"><button class="btn edit-btn-action" style="padding:.15rem .4rem;font-size:.65rem;" onclick="openFullscreenTaskEditor(${item.id})">Edit</button><button class="btn btn-danger" style="padding:.15rem .4rem;font-size:.65rem;" onclick="deleteNote(${item.id})">Delete</button></div></div></div>`;}).join(''); updateTaskDashboard();
         }
         function exportTasks(type){
             if(type==='json'){downloadFile(JSON.stringify(notes,null,2),'cyber-tasks-v2.json','application/json');return;}
@@ -1232,6 +1237,19 @@ footer{margin-left:0!important;padding:50px 0 10px!important}
 <script>
   // Automatically updates the year
   document.getElementById('current-year').textContent = new Date().getFullYear();
+</script>
+
+<div id="fullscreenTaskEditor" class="fullscreen-task-editor"><div class="task-editor-shell"><h2>📝 EDIT TASK — FULL SCREEN</h2><div class="task-editor-grid"><div class="wide"><label>Task Name</label><input id="fullscreenTaskName"></div><div><label>Status</label><select id="fullscreenTaskStatus"><option>Pending</option><option>In Progress</option><option>Completed</option></select></div><div><label>Priority</label><select id="fullscreenTaskPriority"><option>High</option><option>Medium</option><option>Low</option></select></div><div class="wide"><label>Due Date</label><input id="fullscreenTaskDue" type="datetime-local"></div><div class="wide"><label>Task Details</label><div id="fullscreenTaskContent" class="fullscreen-content" contenteditable="true"></div></div></div><div class="task-editor-actions"><button class="btn" onclick="closeFullscreenTaskEditor()">Cancel</button><button class="btn" onclick="saveFullscreenTaskEditor()">💾 Save Changes</button></div></div></div>
+<script>
+let fullscreenEditingTaskId=null;
+function openFullscreenTaskEditor(id){const item=notes.find(n=>n.id===id);if(!item)return;fullscreenEditingTaskId=id;document.getElementById('fullscreenTaskName').value=item.taskName||'';document.getElementById('fullscreenTaskStatus').value=item.status||'Pending';document.getElementById('fullscreenTaskPriority').value=item.priority||'Medium';document.getElementById('fullscreenTaskDue').value=item.dueDate||'';document.getElementById('fullscreenTaskContent').innerHTML=item.content||'';document.getElementById('fullscreenTaskEditor').classList.add('open');document.body.style.overflow='hidden';}
+function closeFullscreenTaskEditor(){document.getElementById('fullscreenTaskEditor').classList.remove('open');document.body.style.overflow='';fullscreenEditingTaskId=null;}
+function saveFullscreenTaskEditor(){const item=notes.find(n=>n.id===fullscreenEditingTaskId);if(!item)return closeFullscreenTaskEditor();const name=document.getElementById('fullscreenTaskName').value.trim();const content=document.getElementById('fullscreenTaskContent').innerHTML.trim();if(!name)return alert('Please enter a Task Name.');if(!content||content==='<br>')return alert('Please enter task details.');item.taskName=name;item.content=content;item.status=document.getElementById('fullscreenTaskStatus').value;item.priority=document.getElementById('fullscreenTaskPriority').value;item.dueDate=document.getElementById('fullscreenTaskDue').value;persistNotes();renderNotes();closeFullscreenTaskEditor();notifyTask('Task updated.');}
+function playCountdownAlert(){try{const ctx=ensureAudioContext();for(let i=0;i<4;i++){const o=ctx.createOscillator(),g=ctx.createGain(),t=ctx.currentTime+i*.3;o.frequency.value=880;o.connect(g);g.connect(ctx.destination);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.18,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+.22);o.start(t);o.stop(t+.24)}}catch(e){}if('Notification'in window&&Notification.permission==='granted')new Notification('⏰ Countdown Finished',{body:'Your countdown timer has ended.'});}
+const __oldResetCountdown=window.resetCountdown;const __oldStartCountdown=window.startCountdown;
+// Hook existing countdown display to detect zero without replacing its working controls.
+setInterval(()=>{const d=document.getElementById('countdownDisplay');if(d&&/^00:00:00$/.test(d.textContent.trim())&&!d.dataset.alerted){d.dataset.alerted='1';playCountdownAlert();}else if(d&&!/^00:00:00$/.test(d.textContent.trim()))d.dataset.alerted='';},500);
+document.addEventListener('DOMContentLoaded',()=>{const cards=[...document.querySelectorAll('.dashboard .clock-card,.dashboard-clock,.mini-clock')].slice(0,3);cards.forEach(c=>{c.classList.add('pinned-clock');c.title='Click to move this pinned time to the first position';c.addEventListener('click',()=>c.parentElement&&c.parentElement.insertBefore(c,c.parentElement.firstElementChild));});const cd=document.getElementById('countdownInput')||document.getElementById('countdownSeconds')||document.getElementById('countdownMinutes');if(cd){const b=document.createElement('button');b.className='btn';b.textContent='⏱ Set 2 Minutes';b.onclick=()=>{cd.value=cd.id==='countdownMinutes'?'2':'120';};cd.parentElement.appendChild(b);}});
 </script>
 </body>
 </html>
