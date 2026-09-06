@@ -2610,11 +2610,19 @@ async function sendMessage() {
       };
       const u = await sb.storage.from("posts").upload(path, chatAttachmentFile, uploadOptions);
       if(u.error) {
-        const msg = u.error.message || String(u.error);
-        if(chatAttachmentType === 'file') {
-          throw new Error('File upload failed. Check that your Supabase Storage "posts" bucket allows uploads for this user. Details: ' + msg);
+        const raw = u.error.message || String(u.error);
+        let reason = 'Unknown Storage error';
+        const low = raw.toLowerCase();
+        if(low.includes('row-level security') || low.includes('permission denied') || low.includes('not authorized')) {
+          reason = 'SUPABASE STORAGE PERMISSION / RLS BLOCKED THE UPLOAD';
+        } else if(low.includes('bucket') && (low.includes('not found') || low.includes('does not exist'))) {
+          reason = 'THE POSTS STORAGE BUCKET DOES NOT EXIST';
+        } else if(low.includes('mime') || low.includes('content type') || low.includes('file type')) {
+          reason = 'THIS FILE TYPE IS BLOCKED BY THE STORAGE BUCKET';
+        } else if(low.includes('size') || low.includes('payload too large') || low.includes('too large')) {
+          reason = 'THE FILE IS LARGER THAN THE BUCKET FILE-SIZE LIMIT';
         }
-        throw u.error;
+        throw new Error('❌ FILE UPLOAD FAILED: ' + reason + '.\n\nSupabase details: ' + raw + '\n\nStep 2: Open Supabase → Storage → posts → Policies and allow authenticated users to INSERT objects.');
       }
       const url = sb.storage.from("posts").getPublicUrl(path).data.publicUrl;
       if(chatAttachmentType === 'image') image_url = url;
