@@ -482,7 +482,7 @@ main{padding:18px 22px 28px!important}
 
         <div class="chat-input-bar">                    <div id="replyBar" class="reply-bar hidden"><span id="replyBarText"></span><button class="danger" style="padding:3px 7px;font-size:12px" onclick="cancelReply()">✕ CANCEL</button></div>                    <div id="stickerPicker" class="sticker-picker hidden"></div>                    <div id="chatAttachmentBar" class="hidden" style="display:flex;gap:6px;align-items:center;margin-bottom:6px">                        <span id="chatAttachmentPill" class="file-pill"></span>                        <button class="danger" style="padding:2px 6px;font-size:12px" onclick="clearChatAttachment()">✕ REMOVE</button>                    </div>          <div class="chat-controls" style="flex-wrap:wrap">                        <button id="voiceRecordBtn" class="secondary" style="padding:10px 14px" onclick="toggleVoiceRecord()" disabled>🎤 VOICE</button>                        <button class="secondary" onclick="document.getElementById('chatImageInput').click()" title="Send Image" disabled id="btnImg">🖼️</button>                        <button class="secondary" onclick="document.getElementById('chatVideoInput').click()" title="Send Video" disabled id="btnVid">📹</button>                        <button class="secondary" onclick="document.getElementById('chatFileInput').click()" title="Send File" disabled id="btnFile">📎 FILE</button>                        <button class="secondary" onclick="toggleStickerPicker()" title="Send Sticker" disabled id="btnSticker">😀</button>
 
-            <input id="chatImageInput" type="file" accept="image/*" class="hidden" onchange="selectChatMedia('image')">                        <input id="chatVideoInput" type="file" accept="video/*" class="hidden" onchange="selectChatMedia('video')">                        <input id="chatFileInput" type="file" class="hidden" onchange="selectChatMedia('file')">
+            <input id="chatImageInput" type="file" accept="image/*" class="hidden" onchange="selectChatMedia('image')">                        <input id="chatVideoInput" type="file" accept="video/*" class="hidden" onchange="selectChatMedia('video')">                        <input id="chatFileInput" type="file" accept="*/*" class="hidden" onchange="selectChatMedia('file')">
 
             <input id="messageInput" placeholder="Type a message... (paste text or screenshot)" onkeydown="if(event.key==='Enter')sendMessage()" disabled style="flex:1">                        <button id="sendButton" class="primary" onclick="sendMessage()" disabled>SEND</button>                    </div>                </div>      </div>        </div>    </div></section>
 <section id="leaderboard" class="page">    <div class="card" style="padding:20px"><h1>🏆 PIXEL LEADERBOARD</h1><div id="leaders" style="margin-top:15px"></div></div></section>
@@ -2332,6 +2332,8 @@ function openChat(id, name) {
   $("voiceRecordBtn").removeAttribute("disabled");
   $("btnImg").removeAttribute("disabled");
   $("btnVid").removeAttribute("disabled");
+  // Enable general file sending after a chat user is selected.
+  const fileBtn = $("btnFile"); if(fileBtn) fileBtn.removeAttribute("disabled");
   $("btnSticker").removeAttribute("disabled");
   buildStickerPicker();
   page("messages");
@@ -2418,7 +2420,7 @@ async function loadMessages() {
       try {
         const meta = JSON.parse(fileMatch[1]);
         messageText = messageText.replace(/(?:^|\n)\[PF_FILE\]\{.*\}$/s,'');
-        fileHtml = `<a class="pf-file-download" href="${esc(meta.url)}" target="_blank" rel="noopener" download>📎 <strong>${esc(meta.name || 'DOWNLOAD FILE')}</strong><span>CLICK TO DOWNLOAD</span></a>`;
+        fileHtml = `<a class="pf-file-download" href="${esc(meta.url)}" target="_blank" rel="noopener noreferrer" download="${esc(meta.name || 'download')}">📎 <strong>${esc(meta.name || 'DOWNLOAD FILE')}</strong><span>CLICK TO DOWNLOAD</span></a>`;
       } catch(e){}
     }
     const body = m.sticker ? `<div class="message-sticker">${esc(m.sticker)}</div>` : `<div>${esc(messageText)}</div>${fileHtml}`;
@@ -2590,15 +2592,30 @@ window.clearChatAttachment = clearChatAttachment;
 async function sendMessage() {
   const text = $("messageInput").value.trim();
   if(!text && !chatAttachmentFile) return;
-  if(!selectedUser) return;
+  if(!selectedUser) { toast("⚠️ Select a user before sending a message."); return; }
+  window.__pfPendingFileContent = null;
 
   let image_url = null, video_url = null, audio_url = null;
   try {
     if(chatAttachmentFile) {
-      const ext = chatAttachmentFile.name.split('.').pop();
-      const path = `${currentUser.id}/chat_${Date.now()}.${ext}`;
-      const u = await sb.storage.from("posts").upload(path, chatAttachmentFile);
-      if(u.error) throw u.error;
+      const ext = (chatAttachmentFile.name.split('.').pop() || 'bin').replace(/[^a-zA-Z0-9]/g,'').toLowerCase() || 'bin';
+      // Keep executable and other binary files as application/octet-stream.
+      // This avoids browsers/Supabase treating unknown files as invalid media.
+      const path = `${currentUser.id}/chat_${Date.now()}_${Math.random().toString(36).slice(2,8)}.${ext}`;
+      const uploadOptions = {
+        upsert: false,
+        contentType: chatAttachmentType === 'file'
+          ? 'application/octet-stream'
+          : (chatAttachmentFile.type || undefined)
+      };
+      const u = await sb.storage.from("posts").upload(path, chatAttachmentFile, uploadOptions);
+      if(u.error) {
+        const msg = u.error.message || String(u.error);
+        if(chatAttachmentType === 'file') {
+          throw new Error('File upload failed. Check that your Supabase Storage "posts" bucket allows uploads for this user. Details: ' + msg);
+        }
+        throw u.error;
+      }
       const url = sb.storage.from("posts").getPublicUrl(path).data.publicUrl;
       if(chatAttachmentType === 'image') image_url = url;
       if(chatAttachmentType === 'video') video_url = url;
