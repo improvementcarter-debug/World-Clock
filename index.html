@@ -1,16 +1,10 @@
 
-
-
-
-
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title> Worl Clock ✨ © 2026 • Built for Pixel Friends </title>
+    <title> World Clock ✨ © 2026 • Built for Pixel Friends </title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -544,13 +538,14 @@ footer{margin-left:0!important;padding:50px 0 10px!important}
     </header>
 
     <div class="nav-tabs">
-<button class="tab-btn active" onclick="switchView('dashboard', this)">📊 Dashboard</button>
-<button class="tab-btn" onclick="switchView('worldclock', this)">⚡ World Clock</button>
-<button class="tab-btn" onclick="switchView('alarm', this)">⏰ Alarm</button>
-<button class="tab-btn" onclick="switchView('stopwatch', this)">⏱️ Stopwatch</button>
-<button class="tab-btn" onclick="switchView('timer', this)">⏳ Countdown</button>
-<button class="tab-btn" onclick="switchView('notes', this)">📝 Tasks & Logs</button>
-</div>
+        <button class="tab-btn active" onclick="switchView('dashboard', this)">📊 Dashboard</button>
+        <button class="tab-btn" onclick="switchView('worldclock', this)">⚡ World Clock</button>
+        <button class="tab-btn" onclick="switchView('alarm', this)">⏰ Alarm</button>
+        <button class="tab-btn" onclick="switchView('stopwatch', this)">⏱️ Stopwatch</button>
+        <button class="tab-btn" onclick="switchView('timer', this)">⏳ Countdown</button>
+        <button class="tab-btn" onclick="switchView('notes', this)">📝 Tasks & Logs</button>
+        <button class="tab-btn" onclick="switchView('audioPlayer', this)">🎵 Audio Playlist</button>
+    </div>
 
 <div id="dashboard" class="view-section active">
   <div class="v2-dashboard">
@@ -660,6 +655,42 @@ footer{margin-left:0!important;padding:50px 0 10px!important}
 </div>
 <div class="notes-grid" id="notesGrid"><div style="color: var(--text-dim); text-align:center; grid-column:1/-1; padding:1rem;">No saved records found.</div></div>
 </div></div>
+
+<!-- VIEW 6: AUDIO PLAYLIST -->
+<div id="audioPlayer" class="view-section">
+    <div class="tool-card" style="max-width: 700px; margin: 0 auto;">
+        <h2>Cyber Audio Matrix & Playlist</h2>
+        
+        <!-- Functional HTML5 Audio Element -->
+        <audio id="mainAudioPlayer" style="width: 100%; margin-top: 1rem;" controls></audio>
+
+        <!-- Upload & Extra Controls -->
+        <div class="control-group" style="margin-top: 1.25rem; flex-wrap: wrap;">
+            <label class="btn import-btn" style="flex: 1; text-align: center; cursor: pointer; min-width: 200px;">
+                📂 Upload Audio Files (MP3, WAV)
+                <input type="file" id="audioFileInput" accept="audio/*" multiple style="display: none;" onchange="handleAudioUpload(event)">
+            </label>
+            <button class="btn" onclick="togglePlaylistLoop()" id="loopToggleBtn">Loop: Off</button>
+            <button class="btn btn-danger" onclick="clearPlaylist()">Clear Playlist</button>
+        </div>
+
+        <!-- Volume Control -->
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; color: var(--text-dim); font-size: 0.8rem;">
+            <span>🔊 Volume</span>
+            <input type="range" id="volumeSlider" min="0" max="1" step="0.05" value="1" style="flex: 1; cursor: pointer;" oninput="updateVolume(this.value)">
+        </div>
+
+        <!-- Track Info Display -->
+        <div id="nowPlayingTitle" style="color: var(--accent-cyan); font-family: 'Orbitron', sans-serif; font-size: 0.85rem; margin: 1rem 0 0.5rem;">
+            Now Playing: No track selected
+        </div>
+
+        <!-- Playlist Container -->
+        <div class="list-container" id="playlistContainer" style="max-height: 220px;">
+            <div style="color: var(--text-dim); text-align: center; padding: 1rem;">Playlist is empty. Upload tracks to begin.</div>
+        </div>
+    </div>
+</div>
 
 <!-- Import Preview / Mapping Modal -->
 <div id="importPreviewModal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(2,6,14,.88);backdrop-filter:blur(8px);padding:20px;overflow:auto;">
@@ -790,7 +821,6 @@ footer{margin-left:0!important;padding:50px 0 10px!important}
         setInterval(updateWorldClock, 1000);
 
         // ===== ALARM CLOCK =====
-        // Alarms are stored locally and checked every second.
         let alarms = JSON.parse(localStorage.getItem('pixel_world_clock_alarms') || '[]');
         let alarmSoundTimer = null;
         let ringingAlarmId = null;
@@ -987,18 +1017,6 @@ footer{margin-left:0!important;padding:50px 0 10px!important}
         }
         function deleteNote(id){ notes=notes.filter(n=>n.id!==id); persistNotes(); renderNotes(); }
         function clearCompleted(){ const count=notes.filter(n=>n.status==='Completed').length; if(!count){notifyTask('No completed tasks to clear.');return;} if(confirm(`Remove ${count} completed task(s)?`)){notes=notes.filter(n=>n.status!=='Completed');persistNotes();renderNotes();} }
-        function toggleEditNote(id){
-            const card=document.getElementById(`note-card-${id}`); const item=notes.find(n=>n.id===id); if(!item) return;
-            const content=card.querySelector('.note-content-display'); const title=card.querySelector('.task-name-display'); const controls=card.querySelector('.status-badge-container'); const btn=card.querySelector('.edit-btn-action');
-            if(content.dataset.editing==='true'){
-                const updated=content.querySelector('.paste-editor').innerHTML.trim(); if(updated && updated!=='<br>') item.content=updated;
-                const updatedTitle=(title.querySelector('input')?.value||'').trim(); if(updatedTitle) item.taskName=updatedTitle;
-                item.status=controls.querySelector('[data-edit-status]').value; item.priority=controls.querySelector('[data-edit-priority]').value; item.dueDate=controls.querySelector('[data-edit-due]').value; persistNotes(); renderNotes();
-            } else {
-                content.dataset.editing='true'; title.innerHTML='<input type="text" value="'+escImport(item.taskName||'')+'" placeholder="Task Name" style="width:100%;margin-bottom:8px;">'; content.innerHTML=`<div class="paste-editor" contenteditable="true" style="min-height:80px;">${item.content}</div>`;
-                controls.innerHTML=`<select data-edit-status><option ${item.status==='Pending'?'selected':''}>Pending</option><option ${item.status==='In Progress'?'selected':''}>In Progress</option><option ${item.status==='Completed'?'selected':''}>Completed</option></select><select data-edit-priority><option ${item.priority==='High'?'selected':''}>High</option><option ${item.priority==='Medium'?'selected':''}>Medium</option><option ${item.priority==='Low'?'selected':''}>Low</option></select><input data-edit-due type="datetime-local" value="${item.dueDate||''}">`; btn.textContent='Save';
-            }
-        }
         function updateTaskDashboard(){
             const total=notes.length, pending=notes.filter(n=>n.status==='Pending').length, progress=notes.filter(n=>n.status==='In Progress').length, done=notes.filter(n=>n.status==='Completed').length, pct=total?Math.round(done/total*100):0;
             [['statTotal',total],['statPending',pending],['statProgress',progress],['statCompleted',done],['statPercent',pct+'%']].forEach(([id,v])=>{const e=document.getElementById(id);if(e)e.textContent=v;});
@@ -1111,14 +1129,125 @@ footer{margin-left:0!important;padding:50px 0 10px!important}
         function checkDueReminders(){const now=Date.now();notes.forEach(n=>{if(!n.dueDate||n.status==='Completed'||n.notified)return;const due=new Date(n.dueDate).getTime();if(due<=now){n.notified=true;persistNotes();const title='Task reminder';const body=stripHtml(n.content).slice(0,120)||'A task is due now.';if('Notification'in window&&Notification.permission==='granted')new Notification(title,{body});else notifyTask('⚠️ Due now: '+body);}});}
         setInterval(checkDueReminders,30000); checkDueReminders(); renderNotes();
 
+        // ===== AUDIO PLAYLIST MODULE =====
+        let playlistTracks = [];
+        let currentTrackIndex = 0;
+        let isPlaylistLooping = false;
+        const audioElement = document.getElementById('mainAudioPlayer');
 
- 
-   
+        function handleAudioUpload(event) {
+            const files = event.target.files;
+            if (!files.length) return;
 
+            for (let file of files) {
+                const trackURL = URL.createObjectURL(file);
+                playlistTracks.push({
+                    name: file.name,
+                    url: trackURL
+                });
+            }
+
+            renderPlaylist();
+            if (playlistTracks.length === files.length && audioElement.paused) {
+                playTrack(0);
+            }
+            event.target.value = '';
+        }
+
+        function renderPlaylist() {
+            const container = document.getElementById('playlistContainer');
+            if (!playlistTracks.length) {
+                container.innerHTML = `<div style="color: var(--text-dim); text-align: center; padding: 1rem;">Playlist is empty. Upload tracks to begin.</div>`;
+                return;
+            }
+
+            container.innerHTML = '';
+            playlistTracks.forEach((track, index) => {
+                const item = document.createElement('div');
+                item.className = 'list-item';
+                if (index === currentTrackIndex) {
+                    item.style.borderColor = 'var(--accent-cyan)';
+                    item.style.background = 'rgba(0, 240, 255, 0.1)';
+                }
+                item.innerHTML = `
+                    <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 65%;">
+                        <span style="font-family:'Orbitron'; font-size:0.75rem; color:#fff;">#${index + 1}</span> 
+                        <span style="color: var(--text-secondary);">${track.name}</span>
+                    </div>
+                    <div style="display:flex; gap:0.4rem;">
+                        <button class="btn" style="padding:0.2rem 0.5rem; font-size:0.65rem;" onclick="playTrack(${index})">Play</button>
+                        <button class="btn btn-danger" style="padding:0.2rem 0.5rem; font-size:0.65rem;" onclick="removeTrack(${index})">Remove</button>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function playTrack(index) {
+            if (index < 0 || index >= playlistTracks.length) return;
+            currentTrackIndex = index;
+            const track = playlistTracks[currentTrackIndex];
+            
+            audioElement.src = track.url;
+            audioElement.play().catch(e => console.log("Playback interaction required:", e));
+            
+            document.getElementById('nowPlayingTitle').textContent = `Now Playing: ${track.name}`;
+            renderPlaylist();
+        }
+
+        function removeTrack(index) {
+            playlistTracks.splice(index, 1);
+            if (currentTrackIndex >= playlistTracks.length) {
+                currentTrackIndex = Math.max(0, playlistTracks.length - 1);
+            }
+            renderPlaylist();
+            if (playlistTracks.length === 0) {
+                audioElement.pause();
+                audioElement.src = '';
+                document.getElementById('nowPlayingTitle').textContent = 'Now Playing: No track selected';
+            }
+        }
+
+        function clearPlaylist() {
+            audioElement.pause();
+            audioElement.src = '';
+            playlistTracks = [];
+            currentTrackIndex = 0;
+            renderPlaylist();
+            document.getElementById('nowPlayingTitle').textContent = 'Now Playing: No track selected';
+        }
+
+        function togglePlaylistLoop() {
+            isPlaylistLooping = !isPlaylistLooping;
+            const btn = document.getElementById('loopToggleBtn');
+            btn.textContent = `Loop: ${isPlaylistLooping ? 'On' : 'Off'}`;
+            if (isPlaylistLooping) {
+                btn.style.borderColor = 'var(--accent-cyan)';
+                btn.style.boxShadow = '0 0 10px rgba(0, 240, 255, 0.4)';
+            } else {
+                btn.style.borderColor = '';
+                btn.style.boxShadow = '';
+            }
+        }
+
+        function updateVolume(val) {
+            audioElement.volume = val;
+        }
+
+        // Auto-advance or Loop Playlist when current track finishes
+        audioElement.addEventListener('ended', () => {
+            if (currentTrackIndex + 1 < playlistTracks.length) {
+                playTrack(currentTrackIndex + 1);
+            } else if (isPlaylistLooping && playlistTracks.length > 0) {
+                playTrack(0);
+            } else {
+                currentTrackIndex = 0;
+                renderPlaylist();
+            }
+        });
 </script>
 
 <style>
-  /* Modern glowing dark background with glassmorphism */
   .live-footer-badge {
     display: inline-block;
     background: linear-gradient(135deg, #111827, #1f2937);
@@ -1142,7 +1271,6 @@ footer{margin-left:0!important;padding:50px 0 10px!important}
     border-color: rgba(99, 102, 241, 0.5);
   }
 
-  /* News ticker movement track */
   .ticker-track {
     display: inline-block;
     animation: scroll-ticker 14s linear infinite;
@@ -1152,7 +1280,6 @@ footer{margin-left:0!important;padding:50px 0 10px!important}
     animation-play-state: paused;
   }
 
-  /* Link and letter styling */
   .live-footer-badge a {
     color: #818cf8;
     text-decoration: none;
@@ -1160,7 +1287,6 @@ footer{margin-left:0!important;padding:50px 0 10px!important}
     display: inline-flex;
   }
 
-  /* Individual letter hover wave technology */
   .active-letter {
     display: inline-block;
     transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), color 0.2s ease;
@@ -1172,7 +1298,6 @@ footer{margin-left:0!important;padding:50px 0 10px!important}
     text-shadow: 0 0 8px rgba(129, 140, 248, 0.6);
   }
 
-  /* Staggered delay for each letter wave */
   .live-footer-badge a:hover .active-letter:nth-child(1)  { transition-delay: 0.00s; }
   .live-footer-badge a:hover .active-letter:nth-child(2)  { transition-delay: 0.02s; }
   .live-footer-badge a:hover .active-letter:nth-child(3)  { transition-delay: 0.04s; }
@@ -1202,9 +1327,7 @@ footer{margin-left:0!important;padding:50px 0 10px!important}
   }
 </style>
 
-
 <script>
-// ===== COMMAND CENTER ENHANCEMENT =====
 (function(){
   function navButton(view){ return document.querySelector(`.tab-btn[onclick*="${view}"]`); }
   function go(view){ switchView(view, navButton(view)); }
@@ -1245,7 +1368,6 @@ footer{margin-left:0!important;padding:50px 0 10px!important}
 </footer>
 
 <script>
-  // Automatically updates the year
   document.getElementById('current-year').textContent = new Date().getFullYear();
 </script>
 
@@ -1256,10 +1378,8 @@ function openFullscreenTaskEditor(id){const item=notes.find(n=>n.id===id);if(!it
 function closeFullscreenTaskEditor(){document.getElementById('fullscreenTaskEditor').classList.remove('open');document.body.style.overflow='';fullscreenEditingTaskId=null;}
 function saveFullscreenTaskEditor(){const item=notes.find(n=>n.id===fullscreenEditingTaskId);if(!item)return closeFullscreenTaskEditor();const name=document.getElementById('fullscreenTaskName').value.trim();const content=document.getElementById('fullscreenTaskContent').innerHTML.trim();if(!name)return alert('Please enter a Task Name.');if(!content||content==='<br>')return alert('Please enter task details.');item.taskName=name;item.content=content;item.status=document.getElementById('fullscreenTaskStatus').value;item.priority=document.getElementById('fullscreenTaskPriority').value;item.dueDate=document.getElementById('fullscreenTaskDue').value;persistNotes();renderNotes();closeFullscreenTaskEditor();notifyTask('Task updated.');}
 function playCountdownAlert(){try{const ctx=ensureAudioContext();for(let i=0;i<4;i++){const o=ctx.createOscillator(),g=ctx.createGain(),t=ctx.currentTime+i*.3;o.frequency.value=880;o.connect(g);g.connect(ctx.destination);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.18,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+.22);o.start(t);o.stop(t+.24)}}catch(e){}if('Notification'in window&&Notification.permission==='granted')new Notification('⏰ Countdown Finished',{body:'Your countdown timer has ended.'});}
-const __oldResetCountdown=window.resetCountdown;const __oldStartCountdown=window.startCountdown;
-// Hook existing countdown display to detect zero without replacing its working controls.
 setInterval(()=>{const d=document.getElementById('countdownDisplay');if(d&&/^00:00:00$/.test(d.textContent.trim())&&!d.dataset.alerted){d.dataset.alerted='1';playCountdownAlert();}else if(d&&!/^00:00:00$/.test(d.textContent.trim()))d.dataset.alerted='';},500);
-document.addEventListener('DOMContentLoaded',()=>{const cards=[...document.querySelectorAll('.dashboard .clock-card,.dashboard-clock,.mini-clock')].slice(0,3);cards.forEach(c=>{c.classList.add('pinned-clock');c.title='Click to move this pinned time to the first position';c.addEventListener('click',()=>c.parentElement&&c.parentElement.insertBefore(c,c.parentElement.firstElementChild));});const cd=document.getElementById('countdownInput')||document.getElementById('countdownSeconds')||document.getElementById('countdownMinutes');if(cd){const b=document.createElement('button');b.className='btn';b.textContent='⏱ Set 2 Minutes';b.onclick=()=>{cd.value=cd.id==='countdownMinutes'?'2':'120';};cd.parentElement.appendChild(b);}});
+document.addEventListener('DOMContentLoaded',()=>{const cards=[...document.querySelectorAll('.dashboard .clock-card,.dashboard-clock,.mini-clock')].slice(0,3);cards.forEach(c=>{c.classList.add('pinned-clock');c.title='Click to move this pinned time to the first position';c.addEventListener('click',()=>c.parentElement&&c.parentElement.insertBefore(c,c.parentElement.firstElementChild));});});
 </script>
 <script id="cc-reliability-upgrade">
 (function(){
@@ -1275,7 +1395,7 @@ let interval=null,end=0,remaining=0,running=false;
 function read(){return Math.floor(Math.max(0,+document.getElementById('timerHours').value||0)*3600+Math.max(0,+document.getElementById('timerMinutes').value||0)*60+Math.max(0,+document.getElementById('timerSeconds').value||0))}
 function fmt(n){n=Math.max(0,Math.floor(n));return String(Math.floor(n/3600)).padStart(2,'0')+':'+String(Math.floor(n%3600/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0')}
 function show(n){const d=document.getElementById('timerDisplay');if(d){d.style.display='block';d.textContent=fmt(n)}}
-function sound(){try{const C=window.AudioContext||window.webkitAudioContext;audioCtx=audioCtx||new C();for(let i=0;i<5;i++){const o=audioCtx.createOscillator(),g=audioCtx.createGain(),t=audioCtx.currentTime+i*.32;o.frequency.value=i%2?1320:880;o.type='square';o.connect(g);g.connect(audioCtx.destination);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.18,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+.24);o.start(t);o.stop(t+.26)}}catch(e){}}
+function sound(){try{const C=window.AudioContext||window.webkitAudioContext;audioCtx=audioCtx||new C();for(let i=0;i<5;i++){const o=audioCtx.createOscillator(),g=audioCtx.createGain(),t=audioCtx.currentTime+i*.3;o.frequency.value=i%2?1320:880;o.type='square';o.connect(g);g.connect(audioCtx.destination);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.18,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+.24);o.start(t);o.stop(t+.26)}}catch(e){}}
 window.startTimer=function(){if(running)return;if(remaining<=0)remaining=read();if(remaining<=0){alert('Please set a countdown time greater than zero.');return}running=true;end=Date.now()+remaining*1000;const b=document.getElementById('timerStartBtn');if(b)b.textContent='Running…';clearInterval(interval);interval=setInterval(()=>{remaining=Math.max(0,Math.ceil((end-Date.now())/1000));show(remaining);if(remaining<=0){clearInterval(interval);running=false;if(b)b.textContent='Start Timer';sound();if('Notification'in window&&Notification.permission==='granted')try{new Notification('⏳ Countdown Finished',{body:'Your countdown timer has reached zero.'})}catch(e){};if(document.getElementById('ccRepeatTimer')?.checked){const n=read();if(n>0)setTimeout(()=>{remaining=n;startTimer()},1200)}}},200);show(remaining)}
 window.resetTimer=function(){clearInterval(interval);running=false;remaining=read();const b=document.getElementById('timerStartBtn');if(b)b.textContent='Start Timer';show(remaining)}
 function addTimer(){const card=document.querySelector('#timer .tool-card');if(!card||document.getElementById('ccTimerControls'))return;const box=document.createElement('div');box.id='ccTimerControls';box.className='cc-timer-controls';box.innerHTML='<div class="cc-timer-title">🔔 Countdown Alarm Options</div><div class="cc-timer-buttons"><button class="btn" data-h="0" data-m="2" data-s="0">2 Minutes</button><button class="btn" data-h="0" data-m="5" data-s="0">5 Minutes</button><button class="btn" data-h="0" data-m="30" data-s="0">30 Minutes</button><button class="btn" data-h="1" data-m="0" data-s="0">1 Hour</button><button class="btn" data-h="2" data-m="0" data-s="0">2 Hours</button></div><label class="cc-repeat-label"><input id="ccRepeatTimer" type="checkbox"> Repeat automatically after the alarm</label>';card.appendChild(box);box.querySelectorAll('[data-h]').forEach(b=>b.onclick=()=>{document.getElementById('timerHours').value=b.dataset.h;document.getElementById('timerMinutes').value=b.dataset.m;document.getElementById('timerSeconds').value=b.dataset.s;remaining=read();show(remaining)});remaining=read();show(remaining)}
