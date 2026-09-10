@@ -1396,6 +1396,26 @@
             updateMetrics();
         }
 
+        // Cross-window sync handler
+        window.addEventListener('storage', (event) => {
+            if (event.key === 'cyber_tasks_v8') {
+                notes = JSON.parse(event.newValue || '[]').map(n => ({
+                    taskName: '', priority: 'Medium', visibility: 'Private', dueDate: '', notified: false, ...n
+                }));
+                renderNotes();
+            } else if (event.key === 'cyber_pinned_clocks_v1') {
+                pinnedClocks = JSON.parse(event.newValue || '[]');
+                renderWorldClocks();
+                updateDashboardWidgets();
+            } else if (event.key === 'cyber_alarms_v1') {
+                alarms = JSON.parse(event.newValue || '[]');
+                renderAlarms();
+            } else if (event.key === 'cyber_playlist_v2') {
+                playlistTracks = JSON.parse(event.newValue || '[]');
+                renderPlaylist();
+            }
+        });
+
         // Initialize state on load
         renderWorldClocks();
         renderNotes();
