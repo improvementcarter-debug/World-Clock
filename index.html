@@ -879,7 +879,6 @@
             if(document.getElementById('dashKhClock')) document.getElementById('dashKhClock').innerText = khTime;
             if(document.getElementById('dashPhClock')) document.getElementById('dashPhClock').innerText = phTime;
 
-            // Check active alarms against current local time (HH:MM)
             const currentHM = now.toTimeString().slice(0, 5);
             alarms.forEach(alarm => {
                 if (alarm.time === currentHM && !alarm.triggered) {
@@ -1010,15 +1009,16 @@
             `).join('');
         }
 
-        // Cyber Audio Matrix & Playlist System
-        let playlistTracks = JSON.parse(localStorage.getItem('cyber_playlist_v2') || '[]');
-        let currentTrackIndex = -1;
+        // Cyber Audio Matrix & Playlist System (Synced via LocalStorage like Tasks & Logs)
+        let playlistTracks = JSON.parse(localStorage.getItem('cyber_playlist_v3') || '[]');
+        let currentTrackId = null;
         let isLooping = false;
 
         const audioEl = document.getElementById('globalAudioElement');
 
         function persistPlaylist() {
-            localStorage.setItem('cyber_playlist_v2', JSON.stringify(playlistTracks));
+            // Store tracks metadata and blob URLs. Note: blob URLs persist within the same session/origin.
+            localStorage.setItem('cyber_playlist_v3', JSON.stringify(playlistTracks));
         }
 
         function handleAudioUpload(event) {
@@ -1040,8 +1040,9 @@
 
             persistPlaylist();
             renderPlaylist();
-            if (currentTrackIndex === -1 && playlistTracks.length > 0) {
-                loadTrack(0);
+            
+            if (currentTrackId === null && playlistTracks.length > 0) {
+                loadTrackById(playlistTracks[0].id);
             }
             
             event.target.value = '';
@@ -1072,11 +1073,10 @@
             }
 
             container.innerHTML = filteredTracks.map((track) => {
-                const realIdx = playlistTracks.findIndex(t => t.id === track.id);
-                const isPlaying = realIdx === currentTrackIndex;
+                const isPlaying = track.id === currentTrackId;
 
                 return `
-                    <div class="playlist-track-item ${isPlaying ? 'active' : ''}" onclick="loadTrack(${realIdx}); playAudio();">
+                    <div class="playlist-track-item ${isPlaying ? 'active' : ''}" onclick="loadTrackById(${track.id}); playAudio();">
                         <span style="display: flex; align-items: center; gap: 8px;">
                             🎵 ${track.name}
                         </span>
@@ -1091,10 +1091,10 @@
             }).join('');
         }
 
-        function loadTrack(index) {
-            if (index < 0 || index >= playlistTracks.length) return;
-            currentTrackIndex = index;
-            const track = playlistTracks[index];
+        function loadTrackById(id) {
+            const track = playlistTracks.find(t => t.id === id);
+            if (!track) return;
+            currentTrackId = id;
             audioEl.src = track.url;
             audioEl.load();
             document.getElementById('audioNowPlaying').innerText = `Now Playing: ${track.name}`;
@@ -1102,8 +1102,8 @@
         }
 
         function playAudio() {
-            if (currentTrackIndex === -1 && playlistTracks.length > 0) {
-                loadTrack(0);
+            if (currentTrackId === null && playlistTracks.length > 0) {
+                loadTrackById(playlistTracks[0].id);
             }
             if (playlistTracks.length === 0) return alert('Please upload audio tracks first.');
             audioEl.play().then(() => {
@@ -1152,7 +1152,7 @@
             if(!confirm('Clear all items from playlist?')) return;
             pauseAudio();
             playlistTracks = [];
-            currentTrackIndex = -1;
+            currentTrackId = null;
             persistPlaylist();
             audioEl.src = '';
             document.getElementById('audioNowPlaying').innerText = 'Now Playing: No track selected';
@@ -1177,11 +1177,14 @@
         });
 
         audioEl.addEventListener('ended', () => {
-            if (!isLooping && currentTrackIndex < playlistTracks.length - 1) {
-                loadTrack(currentTrackIndex + 1);
-                playAudio();
-            } else if (!isLooping) {
-                document.getElementById('audioPlayPauseBtn').innerText = '▶';
+            if (!isLooping && playlistTracks.length > 0) {
+                const currentIndex = playlistTracks.findIndex(t => t.id === currentTrackId);
+                if (currentIndex !== -1 && currentIndex < playlistTracks.length - 1) {
+                    loadTrackById(playlistTracks[currentIndex + 1].id);
+                    playAudio();
+                } else {
+                    document.getElementById('audioPlayPauseBtn').innerText = '▶';
+                }
             }
         });
 
@@ -1396,7 +1399,7 @@
             updateMetrics();
         }
 
-        // Cross-window sync handler
+        // Cross-window sync handler for all storage keys
         window.addEventListener('storage', (event) => {
             if (event.key === 'cyber_tasks_v8') {
                 notes = JSON.parse(event.newValue || '[]').map(n => ({
@@ -1410,7 +1413,7 @@
             } else if (event.key === 'cyber_alarms_v1') {
                 alarms = JSON.parse(event.newValue || '[]');
                 renderAlarms();
-            } else if (event.key === 'cyber_playlist_v2') {
+            } else if (event.key === 'cyber_playlist_v3') {
                 playlistTracks = JSON.parse(event.newValue || '[]');
                 renderPlaylist();
             }
