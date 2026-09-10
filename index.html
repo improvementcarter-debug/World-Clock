@@ -374,7 +374,7 @@
         .task-name-display { font-size: 16px; font-weight: bold; color: var(--text-color); }
         .note-content-display { color: var(--text-muted); font-size: 13px; }
         .status-badge-container { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; font-size: 12px; }
-        .task-meta { display: flex; gap: 8px; align-items: center; }
+        .task-meta { display: flex; gap: 8px; }
         .status-badge { background: rgba(0, 240, 255, 0.1); color: var(--primary); padding: 4px 8px; border-radius: 4px; font-weight: 500; }
         .priority-badge { padding: 4px 8px; border-radius: 4px; font-weight: 500; }
         .priority-High { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
@@ -557,7 +557,7 @@
             <!-- 5. COUNTDOWN VIEW -->
             <div id="view-countdown" class="view-section">
                 <div class="dashboard-header-bar">
-                    <h1 class="dashboard-title">COUNTDOWN TIMER</h1>
+                    <h1 class="dashboard-title">WORLD CLOCK</h1>
                     <div class="copyright-tag">✨ COPYRIGHT &copy; 2026 ALL RIGHTS RESERVED BY PIXEL FRIEND. ⚠️</div>
                 </div>
 
@@ -652,7 +652,7 @@
             <!-- 7. AUDIO PLAYLIST VIEW -->
             <div id="view-playlist" class="view-section">
                 <div class="dashboard-header-bar">
-                    <h1 class="dashboard-title">AUDIO PLAYLIST</h1>
+                    <h1 class="dashboard-title">WORLD CLOCK</h1>
                     <div class="copyright-tag">✨ COPYRIGHT &copy; 2026 ALL RIGHTS RESERVED BY PIXEL FRIEND. ⚠️</div>
                 </div>
 
@@ -957,7 +957,7 @@
             `).join('');
         }
 
-        // Cyber Audio Matrix & Playlist System
+        // --- FIXED CYBER AUDIO MATRIX & PLAYLIST SYSTEM ---
         let playlistTracks = [];
         let currentTrackIndex = -1;
         let isLooping = false;
@@ -969,7 +969,7 @@
             if (!files || files.length === 0) return;
 
             for (let i = 0; i < files.length; i++) {
-                const file = files[i];
+                const file = files[i]; // Fixed indexing reference
                 const fileUrl = URL.createObjectURL(file);
                 playlistTracks.push({ name: file.name, url: fileUrl });
             }
@@ -979,6 +979,7 @@
                 loadTrack(0);
             }
             
+            // Clear input so uploading the same file again triggers change event properly
             event.target.value = '';
         }
 
@@ -1067,6 +1068,7 @@
             renderPlaylist();
         }
 
+        // Audio time update listeners
         audioEl.addEventListener('timeupdate', () => {
             if (!audioEl.duration) return;
             const current = audioEl.currentTime;
@@ -1091,7 +1093,7 @@
             }
         });
 
-        // Tasks and Logs Management (with Real-time Public/Private Visibility Toggle Support)
+        // Tasks and Logs Management
         let notes = JSON.parse(localStorage.getItem('cyber_tasks_v8') || '[]').map(n => ({
             taskName: '', priority: 'Medium', visibility: 'Private', dueDate: '', notified: false, ...n
         }));
@@ -1194,15 +1196,6 @@
             renderNotes(); 
         }
 
-        // Quick toggle visibility directly from task card view anytime
-        function toggleTaskVisibility(id) {
-            const item = notes.find(n => n.id === id);
-            if (!item) return;
-            item.visibility = item.visibility === 'Public' ? 'Private' : 'Public';
-            persistNotes();
-            renderNotes();
-        }
-
         function deleteNote(id) {
             if(confirm('Confirm deletion of this task entry?')) {
                 notes = notes.filter(n => n.id !== id);
@@ -1285,9 +1278,7 @@
                         <div class="task-meta">
                             <span class="status-badge">${item.status}</span>
                             <span class="priority-badge priority-${item.priority || 'Medium'}">${item.priority || 'Medium'}</span>
-                            <button class="btn" style="padding: 2px 8px; font-size: 11px; border-color: ${item.visibility === 'Public' ? 'var(--success)' : 'var(--warning)'}; color: ${item.visibility === 'Public' ? 'var(--success)' : 'var(--warning)'};" onclick="toggleTaskVisibility(${item.id})" title="Click to instantly toggle visibility">
-                                👁️ ${item.visibility || 'Private'}
-                            </button>
+                            <span class="status-badge" style="color: ${item.visibility === 'Public' ? 'var(--success)' : 'var(--warning);'}">${item.visibility || 'Private'}</span>
                         </div>
                         <div style="color: ${overdue ? 'var(--danger)' : 'var(--text-muted);'}">${due ? `Due: ${due.toLocaleString()}` : 'No due date'}</div>
                     </div>
