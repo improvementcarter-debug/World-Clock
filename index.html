@@ -534,7 +534,7 @@
             <!-- 3. ALARM VIEW -->
             <div id="view-alarm" class="view-section">
                 <h2>ALARM SYSTEM</h2>
-                <p style="color: var(--text-muted);">Set and manage acoustic schedule triggers.</p>
+                <p style="color: var(--text-muted);">Set and manage persistent acoustic schedule triggers.</p>
                 <div class="task-creator">
                     <input type="time" id="alarmTimeInput" style="margin-right: 10px;">
                     <button class="btn" onclick="setAlarm()">Set Alarm</button>
@@ -868,7 +868,7 @@
             }).join('');
         }
 
-        // Live Clock Updates
+        // Live Clock Updates & Alarm Checking
         setInterval(() => {
             const now = new Date();
             const utc = now.toUTCString().slice(17, 25);
@@ -878,6 +878,17 @@
             if(document.getElementById('dashUtcClock')) document.getElementById('dashUtcClock').innerText = utc;
             if(document.getElementById('dashKhClock')) document.getElementById('dashKhClock').innerText = khTime;
             if(document.getElementById('dashPhClock')) document.getElementById('dashPhClock').innerText = phTime;
+
+            // Check active alarms against current local time (HH:MM)
+            const currentHM = now.toTimeString().slice(0, 5);
+            alarms.forEach(alarm => {
+                if (alarm.time === currentHM && !alarm.triggered) {
+                    alarm.triggered = true;
+                    persistAlarms();
+                    renderAlarms();
+                    alert(`⏰ ALARM TRIGGERED FOR ${alarm.time}!`);
+                }
+            });
 
             renderWorldClocks();
             updateDashboardWidgets();
@@ -962,24 +973,44 @@
             syncCountdownInputs();
         }
 
-        // Alarm System
-        let alarms = [];
+        // Alarm System with Persistence
+        let alarms = JSON.parse(localStorage.getItem('cyber_alarms_v1') || '[]');
+
+        function persistAlarms() {
+            localStorage.setItem('cyber_alarms_v1', JSON.stringify(alarms));
+        }
+
         function setAlarm() {
             let val = document.getElementById('alarmTimeInput').value;
             if (!val) return alert('Select alarm time.');
-            alarms.push(val);
+            alarms.push({ id: Date.now(), time: val, triggered: false });
+            persistAlarms();
+            renderAlarms();
+            document.getElementById('alarmTimeInput').value = '';
+        }
+
+        function removeAlarm(id) {
+            alarms = alarms.filter(a => a.id !== id);
+            persistAlarms();
             renderAlarms();
         }
+
         function renderAlarms() {
-            document.getElementById('alarmList').innerHTML = alarms.map((a, i) => `
+            const container = document.getElementById('alarmList');
+            if (!container) return;
+            if (alarms.length === 0) {
+                container.innerHTML = `<div style="color: var(--text-muted); font-size: 11px; text-align: center; padding: 15px;">No active alarms set.</div>`;
+                return;
+            }
+            container.innerHTML = alarms.map((a) => `
                 <div class="dash-panel" style="display: flex; justify-content: space-between; align-items: center; padding: 12px;">
-                    <span>🔔 Active Alarm: <strong>${a}</strong></span>
-                    <button class="btn btn-danger" onclick="alarms.splice(${i},1); renderAlarms();">Remove</button>
+                    <span>🔔 Active Alarm: <strong>${a.time}</strong> ${a.triggered ? '<span style="color:var(--warning); font-size:10px;">(Triggered)</span>' : ''}</span>
+                    <button class="btn btn-danger" onclick="removeAlarm(${a.id})">Remove</button>
                 </div>
             `).join('');
         }
 
-        // Cyber Audio Matrix & Playlist System (with Visibility Support)
+        // Cyber Audio Matrix & Playlist System
         let playlistTracks = JSON.parse(localStorage.getItem('cyber_playlist_v2') || '[]');
         let currentTrackIndex = -1;
         let isLooping = false;
@@ -1041,7 +1072,6 @@
             }
 
             container.innerHTML = filteredTracks.map((track) => {
-                // Find actual global index in playlistTracks array
                 const realIdx = playlistTracks.findIndex(t => t.id === track.id);
                 const isPlaying = realIdx === currentTrackIndex;
 
@@ -1370,6 +1400,7 @@
         renderWorldClocks();
         renderNotes();
         renderPlaylist();
+        renderAlarms();
         updateDashboardWidgets();
         updateCountdownDisplay();
     </script>
