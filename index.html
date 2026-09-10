@@ -373,6 +373,7 @@
         
         .notes-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
         .note-card { background-color: var(--card-bg); border: 1px solid var(--border-active); border-radius: 10px; padding: 18px; display: flex; flex-direction: column; gap: 10px; }
+        .note-card.pinned-task-card { border-color: var(--primary); background: linear-gradient(135deg, var(--card-bg) 0%, rgba(0, 240, 255, 0.05) 100%); }
         .task-name-display { font-size: 16px; font-weight: bold; color: var(--text-color); }
         .note-content-display { color: var(--text-muted); font-size: 13px; }
         .status-badge-container { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; font-size: 12px; }
@@ -538,6 +539,9 @@
                 <div class="task-creator">
                     <input type="time" id="alarmTimeInput" style="margin-right: 10px;">
                     <button class="btn" onclick="setAlarm()">Set Alarm</button>
+                    <button class="btn" style="margin-left: 10px; border-color: var(--warning); color: var(--warning);" onclick="playRegularAlarmSound()">Test Standard Alarm</button>
+                    <button class="btn" style="margin-left: 10px; border-color: var(--primary); color: var(--primary);" onclick="playStrongCountdownAlarmSound()">Test Countdown Alarm</button>
+                    <button class="btn" style="margin-left: 10px; border-color: var(--success); color: var(--success);" onclick="playTaskNotificationSound()">Test Tasks Chime</button>
                 </div>
                 <div id="alarmList" style="display: flex; flex-direction: column; gap: 10px;"></div>
             </div>
@@ -608,7 +612,7 @@
             <!-- 6. TASKS & LOGS VIEW -->
             <div id="view-tasks" class="view-section">
                 <h2>TASKS & LOGS</h2>
-                <p style="color: var(--text-muted);">Manage task elements, set Public/Private visibility, and filter lists.</p>
+                <p style="color: var(--text-muted);">Manage task elements, pin important items, and filter lists.</p>
 
                 <div class="task-creator">
                     <h3 style="margin-top:0; font-size: 15px; color: var(--primary);">Create New Task Entry</h3>
@@ -794,6 +798,98 @@
             if(element) element.classList.add('active');
         }
 
+        // Standard Alarm Sound (for general schedule alarms)
+        function playRegularAlarmSound() {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                for (let i = 0; i < 3; i++) {
+                    let startTime = audioCtx.currentTime + (i * 0.35);
+                    let osc1 = audioCtx.createOscillator();
+                    let osc2 = audioCtx.createOscillator();
+                    let gainNode = audioCtx.createGain();
+
+                    osc1.type = 'sawtooth';
+                    osc1.frequency.setValueAtTime(880, startTime);
+                    osc2.type = 'square';
+                    osc2.frequency.setValueAtTime(1320, startTime);
+
+                    gainNode.gain.setValueAtTime(0.3, startTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.25);
+
+                    osc1.connect(gainNode);
+                    osc2.connect(gainNode);
+                    gainNode.connect(audioCtx.destination);
+
+                    osc1.start(startTime);
+                    osc2.start(startTime);
+                    osc1.stop(startTime + 0.25);
+                    osc2.stop(startTime + 0.25);
+                }
+            } catch (e) {
+                console.log("AudioContext error", e);
+            }
+        }
+
+        // Distinct Countdown Alarm Sound
+        function playStrongCountdownAlarmSound() {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                for (let i = 0; i < 5; i++) {
+                    let startTime = audioCtx.currentTime + (i * 0.18);
+                    let osc1 = audioCtx.createOscillator();
+                    let osc2 = audioCtx.createOscillator();
+                    let gainNode = audioCtx.createGain();
+
+                    osc1.type = 'triangle';
+                    osc1.frequency.setValueAtTime(1760, startTime);
+                    
+                    osc2.type = 'sawtooth';
+                    osc2.frequency.setValueAtTime(2637, startTime);
+
+                    gainNode.gain.setValueAtTime(0.35, startTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.12);
+
+                    osc1.connect(gainNode);
+                    osc2.connect(gainNode);
+                    gainNode.connect(audioCtx.destination);
+
+                    osc1.start(startTime);
+                    osc2.start(startTime);
+                    osc1.stop(startTime + 0.12);
+                    osc2.stop(startTime + 0.12);
+                }
+            } catch (e) {
+                console.log("AudioContext error", e);
+            }
+        }
+
+        // Distinct, Strong Tasks & Logs Notification Chime
+        function playTaskNotificationSound() {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const frequencies = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+                frequencies.forEach((freq, index) => {
+                    let startTime = audioCtx.currentTime + (index * 0.08);
+                    let osc = audioCtx.createOscillator();
+                    let gainNode = audioCtx.createGain();
+
+                    osc.type = index === frequencies.length - 1 ? 'square' : 'sine';
+                    osc.frequency.setValueAtTime(freq, startTime);
+
+                    gainNode.gain.setValueAtTime(0.25, startTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + 0.25);
+
+                    osc.connect(gainNode);
+                    gainNode.connect(audioCtx.destination);
+
+                    osc.start(startTime);
+                    osc.stop(startTime + 0.25);
+                });
+            } catch (e) {
+                console.log("AudioContext error", e);
+            }
+        }
+
         // Timezones config for World Clock & Pins
         const timezonesConfig = [
             { name: "UTC (UTC+0)", offset: 0, code: "UTC+00:00" },
@@ -885,7 +981,20 @@
                     alarm.triggered = true;
                     persistAlarms();
                     renderAlarms();
+                    playRegularAlarmSound();
                     alert(`⏰ ALARM TRIGGERED FOR ${alarm.time}!`);
+                }
+            });
+
+            notes.forEach(note => {
+                if (note.dueDate && !note.notified && note.status !== 'Completed') {
+                    const dueDateObj = new Date(note.dueDate);
+                    if (now >= dueDateObj) {
+                        note.notified = true;
+                        persistNotes();
+                        playTaskNotificationSound();
+                        alert(`📁 TASK DUE ALERT: "${note.taskName}" is due!`);
+                    }
                 }
             });
 
@@ -950,6 +1059,7 @@
                     updateCountdownDisplay();
                 } else {
                     pauseCountdown();
+                    playStrongCountdownAlarmSound();
                     alert('Countdown timer finished!');
                     if (document.getElementById('cdRepeatCheckbox').checked) {
                         cdTotalSeconds = cdInitialSeconds;
@@ -1009,7 +1119,7 @@
             `).join('');
         }
 
-        // Cyber Audio Matrix & Playlist System (Synced via LocalStorage like Tasks & Logs)
+        // Cyber Audio Matrix & Playlist System
         let playlistTracks = JSON.parse(localStorage.getItem('cyber_playlist_v3') || '[]');
         let currentTrackId = null;
         let isLooping = false;
@@ -1017,7 +1127,6 @@
         const audioEl = document.getElementById('globalAudioElement');
 
         function persistPlaylist() {
-            // Store tracks metadata and blob URLs. Note: blob URLs persist within the same session/origin.
             localStorage.setItem('cyber_playlist_v3', JSON.stringify(playlistTracks));
         }
 
@@ -1188,14 +1297,14 @@
             }
         });
 
-        // Tasks and Logs Management
-        let notes = JSON.parse(localStorage.getItem('cyber_tasks_v8') || '[]').map(n => ({
-            taskName: '', priority: 'Medium', visibility: 'Private', dueDate: '', notified: false, ...n
+        // Tasks and Logs Management (with Task Pinned Feature)
+        let notes = JSON.parse(localStorage.getItem('cyber_tasks_v9') || '[]').map(n => ({
+            taskName: '', priority: 'Medium', visibility: 'Private', dueDate: '', notified: false, isPinned: false, ...n
         }));
         let fullscreenEditingTaskId = null;
 
         function persistNotes() {
-            localStorage.setItem('cyber_tasks_v8', JSON.stringify(notes));
+            localStorage.setItem('cyber_tasks_v9', JSON.stringify(notes));
             updateMetrics();
         }
 
@@ -1281,6 +1390,7 @@
                 visibility: document.getElementById('visibilityInput').value, 
                 dueDate: document.getElementById('dueDateInput').value,
                 notified: false,
+                isPinned: false,
                 date: new Date().toLocaleDateString()
             });
             
@@ -1288,6 +1398,7 @@
             editor.innerHTML = ''; 
             document.getElementById('taskNameInput').value = ''; 
             document.getElementById('dueDateInput').value = ''; 
+            playTaskNotificationSound(); 
             renderNotes(); 
         }
 
@@ -1295,6 +1406,21 @@
             const item = notes.find(n => n.id === id);
             if (!item) return;
             item.visibility = item.visibility === 'Public' ? 'Private' : 'Public';
+            persistNotes();
+            renderNotes();
+        }
+
+        function toggleTaskPin(id) {
+            const item = notes.find(n => n.id === id);
+            if (!item) return;
+            item.isPinned = !item.isPinned;
+            
+            // Sort notes so pinned items automatically jump to the top
+            notes.sort((a, b) => {
+                if (a.isPinned === b.isPinned) return 0;
+                return a.isPinned ? -1 : 1;
+            });
+
             persistNotes();
             renderNotes();
         }
@@ -1374,8 +1500,13 @@
                 let overdue = due && due < new Date() && item.status !== 'Completed';
                 
                 return `
-                <div class="note-card" id="note-card-${item.id}">
-                    <div class="task-name-display">📁 ${escImport(item.taskName || 'Untitled Task')}</div>
+                <div class="note-card ${item.isPinned ? 'pinned-task-card' : ''}" id="note-card-${item.id}">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div class="task-name-display">📁 ${escImport(item.taskName || 'Untitled Task')}</div>
+                        <button class="btn" style="padding: 3px 10px; font-size: 10px; border-color: ${item.isPinned ? 'var(--primary)' : 'var(--border-active)'}; background: ${item.isPinned ? 'var(--accent-glow)' : 'transparent'}; color: ${item.isPinned ? 'var(--primary)' : 'var(--text-muted)'};" onclick="toggleTaskPin(${item.id})">
+                            📍 ${item.isPinned ? 'PINNED' : 'PIN TASK'}
+                        </button>
+                    </div>
                     <div class="note-content-display">${item.content}</div>
                     <div class="status-badge-container">
                         <div class="task-meta">
@@ -1394,16 +1525,17 @@
                             <button class="btn btn-danger" style="padding: 5px 10px; font-size: 11px;" onclick="deleteNote(${item.id})">Delete</button>
                         </div>
                     </div>
-                </div>`;
+                </div>
+                `;
             }).join('');
             updateMetrics();
         }
 
         // Cross-window sync handler for all storage keys
         window.addEventListener('storage', (event) => {
-            if (event.key === 'cyber_tasks_v8') {
+            if (event.key === 'cyber_tasks_v9') {
                 notes = JSON.parse(event.newValue || '[]').map(n => ({
-                    taskName: '', priority: 'Medium', visibility: 'Private', dueDate: '', notified: false, ...n
+                    taskName: '', priority: 'Medium', visibility: 'Private', dueDate: '', notified: false, isPinned: false, ...n
                 }));
                 renderNotes();
             } else if (event.key === 'cyber_pinned_clocks_v1') {
