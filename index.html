@@ -338,13 +338,7 @@
             margin-bottom: 20px;
             display: flex;
             align-items: center;
-            gap: 15px;
-        }
-        .audio-playback-controls {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-shrink: 0;
+            gap: 12px;
         }
         .audio-ctrl-btn {
             background: var(--card-bg);
@@ -353,15 +347,14 @@
             width: 34px; height: 34px;
             border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
-            cursor: pointer; font-weight: bold;
+            cursor: pointer; font-weight: bold; flex-shrink: 0;
             transition: 0.2s;
             font-size: 12px;
         }
-        .audio-ctrl-btn.main-play {
-            width: 42px; height: 42px;
-            font-size: 14px;
-        }
         .audio-ctrl-btn:hover { background: var(--accent-glow); border-color: var(--primary); }
+        .audio-play-main-btn {
+            width: 42px; height: 42px; font-size: 14px;
+        }
         .audio-timeline-wrap { flex: 1; display: flex; flex-direction: column; gap: 6px; }
         .audio-time-label { font-size: 11px; color: var(--text-muted); font-family: monospace; }
         .audio-seek-slider { width: 100%; accent-color: var(--primary); cursor: pointer; }
@@ -776,7 +769,6 @@
                             <span class="ticker-item"><span>SECURITY:</span> Encryption protocols verified and running securely.</span>
                             <span class="ticker-item"><span>UPDATE:</span> World clock synchronizers updated to standard UTC intervals.</span>
                             <span class="ticker-item"><span>NOTICE:</span> Remember to check pending task deadlines before end of day operations.</span>
-                            <!-- Duplicated items for seamless infinite loop effect -->
                             <span class="ticker-item"><span>SYSTEM:</span> Command center online and fully operational across all remote clusters.</span>
                             <span class="ticker-item"><span>SECURITY:</span> Encryption protocols verified and running securely.</span>
                             <span class="ticker-item"><span>UPDATE:</span> World clock synchronizers updated to standard UTC intervals.</span>
@@ -1024,13 +1016,13 @@
                 <div class="audio-container-card">
                     <div style="font-size: 16px; font-weight: bold; color: var(--text-color); margin-bottom: 15px;">Cyber Audio Matrix & Playlist</div>
 
-                    <!-- Audio Player Control Box -->
+                    <!-- Audio Player Control Box (Previous, Play/Pause, Next, Shuffle, Repeat) -->
                     <div class="audio-player-box">
-                        <div class="audio-playback-controls">
-                            <button class="audio-ctrl-btn" onclick="playPreviousTrack()" title="Previous Track">⏮</button>
-                            <button class="audio-ctrl-btn main-play" id="audioPlayPauseBtn" onclick="togglePlayAudio()" title="Play/Pause">▶</button>
-                            <button class="audio-ctrl-btn" onclick="playNextTrack()" title="Next Track">⏭</button>
-                        </div>
+                        <button class="audio-ctrl-btn" onclick="playPreviousTrack()" title="Previous Track">⏮</button>
+                        <button class="audio-ctrl-btn audio-play-main-btn" id="audioPlayPauseBtn" onclick="togglePlayAudio()" title="Play / Pause">▶</button>
+                        <button class="audio-ctrl-btn" onclick="playNextTrack()" title="Next Track">⏭</button>
+                        <button class="audio-ctrl-btn" id="audioShuffleBtn" onclick="toggleShuffleAudio()" title="Shuffle Playlist">🔀</button>
+                        
                         <div class="audio-timeline-wrap">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
                                 <span id="audioCurrentTime" class="audio-time-label">0:00 / 0:00</span>
@@ -1053,8 +1045,7 @@
                                 <option value="Public">Public</option>
                             </select>
                         </div>
-                        <button class="audio-btn-action" id="audioShuffleBtn" onclick="toggleShuffleAudio()">SHUFFLE: OFF</button>
-                        <button class="audio-btn-action" id="audioLoopBtn" onclick="toggleLoopAudio()">REPEAT: OFF</button>
+                        <button class="audio-btn-action" id="audioLoopBtn" onclick="toggleLoopAudio()">LOOP: OFF</button>
                         <button class="audio-btn-action audio-btn-danger" onclick="clearPlaylist()">CLEAR PLAYLIST</button>
                     </div>
 
@@ -1142,7 +1133,7 @@
                 </div>
             </div>
 
-            <!-- 9. TRANSACTION SUCCESS RATE VIEW (NEW FUNCTION) -->
+            <!-- 9. TRANSACTION SUCCESS RATE VIEW -->
             <div id="view-txcalculator" class="view-section">
                 <div class="dashboard-header-bar">
                     <h1 class="dashboard-title">TRANSACTION SUCCESS RATE</h1>
@@ -1395,9 +1386,7 @@
         let activeAudioCtx = null;
 
         function triggerContinuousSound(type) {
-            if (activeAlertInterval) return; // Already ringing continuously
-            
-            // Play immediately and then repeat every 1.2 seconds until dismissed
+            if (activeAlertInterval) return;
             playSingleSoundInstance(type);
             activeAlertInterval = setInterval(() => {
                 playSingleSoundInstance(type);
@@ -1542,7 +1531,6 @@
             }
             localStorage.setItem('cyber_pinned_clocks_v1', JSON.stringify(pinnedClocks));
             renderWorldClocks();
-            updateDashboardWidgets();
         }
 
         function renderWorldClocks() {
@@ -1611,19 +1599,7 @@
                 }
             });
 
-            notes.forEach(note => {
-                if (note.dueDate && !note.notified && note.status !== 'Completed') {
-                    const dueDateObj = new Date(note.dueDate);
-                    if (now >= dueDateObj) {
-                        note.notified = true;
-                        persistNotes();
-                        showSystemAlertModal(`📁 TASK DUE ALERT`, `Task entry "${note.taskName}" is due! Sound will loop continuously until you click Dismiss.`, 'harmonic');
-                    }
-                }
-            });
-
             renderWorldClocks();
-            updateDashboardWidgets();
         }, 1000);
 
         // Stopwatch
@@ -1750,7 +1726,7 @@
             container.innerHTML = alarms.map((a) => `
                 <div class="dash-panel" style="display: flex; justify-content: space-between; align-items: center; padding: 12px;">
                     <div>
-                        <div style="font-size: 13px; font-weight: bold; color: var(--primary);">🔔 ${escImport(a.title || 'Alarm')} <span style="font-size: 10px; color: var(--text-muted); font-weight: normal;">(${a.ringtone || 'cyber'})</span></div>
+                        <div style="font-size: 13px; font-weight: bold; color: var(--primary);">🔔 ${escapeHtml(a.title || 'Alarm')} <span style="font-size: 10px; color: var(--text-muted); font-weight: normal;">(${a.ringtone || 'cyber'})</span></div>
                         <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Time: <strong>${a.time}</strong> ${a.triggered ? '<span style="color:var(--warning);">(Triggered)</span>' : ''}</div>
                     </div>
                     <div style="display: flex; gap: 8px; align-items: center;">
@@ -1761,7 +1737,9 @@
             `).join('');
         }
 
-        // Cyber Audio Matrix & Playlist System (Upgraded with Previous, Next, Shuffle, Repeat & Editable Titles)
+        // ==========================================
+        // CYBER AUDIO MATRIX & PLAYLIST SYSTEM (UPDATED)
+        // ==========================================
         let playlistTracks = JSON.parse(localStorage.getItem('cyber_playlist_v4') || '[]');
         let currentTrackId = null;
         let isLooping = false;
@@ -1782,11 +1760,9 @@
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
                 const fileUrl = URL.createObjectURL(file);
-                // Strip extension for cleaner initial track title editing
-                const cleanName = file.name.replace(/\.[^/.]+$/, "");
                 playlistTracks.push({ 
                     id: Date.now() + i,
-                    name: cleanName, 
+                    name: file.name.replace(/\.[^/.]+$/, ""), // Strip file extension for cleaner default title
                     url: fileUrl,
                     visibility: defaultVis 
                 });
@@ -1802,20 +1778,13 @@
             event.target.value = '';
         }
 
-        function toggleTrackVisibility(id, event) {
-            event.stopPropagation();
-            const track = playlistTracks.find(t => t.id === id);
-            if (!track) return;
-            track.visibility = track.visibility === 'Public' ? 'Private' : 'Public';
-            persistPlaylist();
-            renderPlaylist();
-        }
-
+        // Edit Track Title Function
         function editTrackTitle(id, event) {
             event.stopPropagation();
             const track = playlistTracks.find(t => t.id === id);
             if (!track) return;
-            const newTitle = prompt("Edit track title:", track.name);
+            
+            const newTitle = prompt("Enter new title for track:", track.name);
             if (newTitle !== null && newTitle.trim() !== "") {
                 track.name = newTitle.trim();
                 persistPlaylist();
@@ -1824,6 +1793,15 @@
                     document.getElementById('audioNowPlaying').innerText = `Now Playing: ${track.name}`;
                 }
             }
+        }
+
+        function toggleTrackVisibility(id, event) {
+            event.stopPropagation();
+            const track = playlistTracks.find(t => t.id === id);
+            if (!track) return;
+            track.visibility = track.visibility === 'Public' ? 'Private' : 'Public';
+            persistPlaylist();
+            renderPlaylist();
         }
 
         function renderPlaylist() {
@@ -1846,14 +1824,15 @@
 
                 return `
                     <div class="playlist-track-item ${isPlaying ? 'active' : ''}" onclick="loadTrackById(${track.id}); playAudio();">
-                        <span style="display: flex; align-items: center; gap: 8px;">
-                            🎵 ${escImport(track.name)}
+                        <span style="display: flex; align-items: center; gap: 8px; flex: 1; word-break: break-all;">
+                            🎵 ${escapeHtml(track.name)}
                         </span>
-                        <div style="display: flex; align-items: center; gap: 8px;" onclick="event.stopPropagation()">
+                        <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;" onclick="event.stopPropagation()">
                             <button class="btn" style="padding: 2px 6px; font-size: 10px;" onclick="editTrackTitle(${track.id}, event)" title="Edit Track Title">✏️ Edit</button>
-                            <button class="btn" style="padding: 2px 8px; font-size: 10px; border-color: ${track.visibility === 'Public' ? 'var(--success)' : 'var(--warning)'}; color: ${track.visibility === 'Public' ? 'var(--success)' : 'var(--warning)'};" onclick="toggleTrackVisibility(${track.id}, event)" title="Toggle Visibility">
+                            <button class="btn" style="padding: 2px 8px; font-size: 10px; border-color: ${track.visibility === 'Public' ? 'var(--success)' : 'var(--warning)'}; color: ${track.visibility === 'Public' ? 'var(--success)' : 'var(--warning)'};" onclick="toggleTrackVisibility(${track.id}, event)">
                                 👁️ ${track.visibility || 'Private'}
                             </button>
+                            <span style="font-size: 10px; color: var(--text-muted);">${isPlaying ? 'PLAYING' : 'READY'}</span>
                         </div>
                     </div>
                 `;
@@ -1893,32 +1872,45 @@
             }
         }
 
-        function playNextTrack() {
-            if (playlistTracks.length === 0) return;
-            if (isShuffling) {
-                const randomIndex = Math.floor(Math.random() * playlistTracks.length);
-                loadTrackById(playlistTracks[randomIndex].id);
-                playAudio();
-                return;
-            }
-            const currentIndex = playlistTracks.findIndex(t => t.id === currentTrackId);
-            let nextIndex = currentIndex + 1;
-            if (nextIndex >= playlistTracks.length) {
-                nextIndex = 0; // Loop back to start
-            }
-            loadTrackById(playlistTracks[nextIndex].id);
-            playAudio();
-        }
-
+        // Previous Track Control
         function playPreviousTrack() {
             if (playlistTracks.length === 0) return;
             const currentIndex = playlistTracks.findIndex(t => t.id === currentTrackId);
             let prevIndex = currentIndex - 1;
-            if (prevIndex < 0) {
-                prevIndex = playlistTracks.length - 1; // Wrap to last track
-            }
+            if (prevIndex < 0) prevIndex = playlistTracks.length - 1;
             loadTrackById(playlistTracks[prevIndex].id);
             playAudio();
+        }
+
+        // Next Track Control
+        function playNextTrack() {
+            if (playlistTracks.length === 0) return;
+            if (isShuffling) {
+                let randomIndex = Math.floor(Math.random() * playlistTracks.length);
+                if (playlistTracks.length > 1 && playlistTracks[randomIndex].id === currentTrackId) {
+                    randomIndex = (randomIndex + 1) % playlistTracks.length;
+                }
+                loadTrackById(playlistTracks[randomIndex].id);
+            } else {
+                const currentIndex = playlistTracks.findIndex(t => t.id === currentTrackId);
+                let nextIndex = currentIndex + 1;
+                if (nextIndex >= playlistTracks.length) nextIndex = 0;
+                loadTrackById(playlistTracks[nextIndex].id);
+            }
+            playAudio();
+        }
+
+        // Shuffle Toggle Control
+        function toggleShuffleAudio() {
+            isShuffling = !isShuffling;
+            const btn = document.getElementById('audioShuffleBtn');
+            if (isShuffling) {
+                btn.style.borderColor = 'var(--primary)';
+                btn.style.background = 'var(--accent-glow)';
+            } else {
+                btn.style.borderColor = 'var(--border-active)';
+                btn.style.background = 'transparent';
+            }
         }
 
         function seekAudio(value) {
@@ -1930,20 +1922,6 @@
             audioEl.volume = val;
         }
 
-        function toggleShuffleAudio() {
-            isShuffling = !isShuffling;
-            const btn = document.getElementById('audioShuffleBtn');
-            if (isShuffling) {
-                btn.style.borderColor = 'var(--primary)';
-                btn.style.background = 'var(--accent-glow)';
-                btn.innerText = 'SHUFFLE: ON';
-            } else {
-                btn.style.borderColor = 'var(--border-active)';
-                btn.style.background = 'transparent';
-                btn.innerText = 'SHUFFLE: OFF';
-            }
-        }
-
         function toggleLoopAudio() {
             isLooping = !isLooping;
             audioEl.loop = isLooping;
@@ -1951,11 +1929,11 @@
             if (isLooping) {
                 btn.style.borderColor = 'var(--primary)';
                 btn.style.background = 'var(--accent-glow)';
-                btn.innerText = 'REPEAT: ON';
+                btn.innerText = 'LOOP: ON';
             } else {
                 btn.style.borderColor = 'var(--border-active)';
                 btn.style.background = 'transparent';
-                btn.innerText = 'REPEAT: OFF';
+                btn.innerText = 'LOOP: OFF';
             }
         }
 
@@ -1988,256 +1966,23 @@
         });
 
         audioEl.addEventListener('ended', () => {
-            if (!isLooping) {
+            if (!isLooping && playlistTracks.length > 0) {
                 playNextTrack();
             }
         });
 
-        // Success Rate Calculator & Summary Tool Logic
-        function calculateData() {
-            const rawText = document.getElementById('dataInput').value;
-            if (!rawText.trim()) {
-                alert("Please enter data!");
-                return;
-            }
-
-            const blocks = rawText.split("The statistic of success rate on");
-            let hourlyMap = {};
-            let allBk = [];
-            let allNg = [];
-
-            for (let i = 1; i < blocks.length; i++) {
-                let block = blocks[i];
-                let lines = block.trim().split('\n');
-                let hour = lines[0].trim();
-                
-                if (!hourlyMap[hour]) {
-                    hourlyMap[hour] = { bk: [], ng: [] };
-                }
-
-                for (let line of lines) {
-                    line = line.trim();
-                    if (line.startsWith("BK:")) {
-                        let val = parseFloat(line.replace("BK:", "").replace("%", "").trim());
-                        if (!isNaN(val)) {
-                            hourlyMap[hour].bk.push(val);
-                            allBk.push(val);
-                        }
-                    } else if (line.startsWith("NG:")) {
-                        let val = parseFloat(line.replace("NG:", "").replace("%", "").trim());
-                        if (!isNaN(val)) {
-                            hourlyMap[hour].ng.push(val);
-                            allNg.push(val);
-                        }
-                    }
-                }
-            }
-
-            if (allBk.length === 0 && allNg.length === 0) {
-                alert("No valid data recognized. Please check the format!");
-                return;
-            }
-
-            let totalBkAvg = allBk.reduce((a, b) => a + b, 0) / allBk.length;
-            let totalNgAvg = allNg.reduce((a, b) => a + b, 0) / allNg.length;
-            let diff = (totalNgAvg - totalBkAvg).toFixed(2);
-
-            document.getElementById('bkAvg').innerText = totalBkAvg.toFixed(2) + '%';
-            document.getElementById('ngAvg').innerText = totalNgAvg.toFixed(2) + '%';
-
-            let summaryHTML = `
-                <p><strong>NG</strong> overall performance is superior to BK, with an average success rate of <strong>${totalNgAvg.toFixed(2)}%</strong>.</p>
-                <p><strong>BK</strong> has an average success rate of <strong>${totalBkAvg.toFixed(2)}%</strong>, showing general stability during certain periods but noticeable fluctuations elsewhere.</p>
-                <p><strong>NG</strong>'s average success rate is higher than BK by <strong>${diff}</strong> percentage points.</p>
-            `;
-            document.getElementById('summaryText').innerHTML = summaryHTML;
-
-            let tableBodyHTML = '';
-            let sortedHours = Object.keys(hourlyMap);
-            
-            for (let hour of sortedHours) {
-                let bkArr = hourlyMap[hour].bk;
-                let ngArr = hourlyMap[hour].ng;
-                let bkHourAvg = bkArr.length ? (bkArr.reduce((a, b) => a + b, 0) / bkArr.length).toFixed(2) + '%' : 'N/A';
-                let ngHourAvg = ngArr.length ? (ngArr.reduce((a, b) => a + b, 0) / ngArr.length).toFixed(2) + '%' : 'N/A';
-
-                tableBodyHTML += `<tr><td>${hour}</td><td>${bkHourAvg}</td><td>${ngHourAvg}</td></tr>`;
-            }
-
-            document.getElementById('hourlyTableBody').innerHTML = tableBodyHTML;
-            document.getElementById('resultsSection').style.display = 'block';
+        // Utility helper for safe text
+        function escapeHtml(text) {
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+            return text.replace(/[&<>"']/g, m => map[m]);
         }
 
-        // Transaction Success Rate Calculator Logic
-        function calculateTxRate(id) {
-            const table = document.querySelector(`[data-row-id="${id}"]`);
-            const successVal = parseFloat(table.querySelector(".success-input").value) || 0;
-            const totalVal = parseFloat(table.querySelector(".total-input").value) || 0;
-            const resultCell = document.getElementById(`result-${id}`);
-
-            if (totalVal <= 0) {
-                resultCell.textContent = "0%";
-            } else {
-                let percentage = Math.round((successVal / totalVal) * 100);
-                if (percentage > 100) percentage = 100;
-                resultCell.textContent = percentage + "%";
-            }
-        }
-
-        // Paste Raw Operational Logs Logic
-        function generateReport() {
-            const rawText = document.getElementById('rawInput').value;
-            if (!rawText.trim()) {
-                alert("Please paste some logs first!");
-                return;
-            }
-
-            let cleanedText = rawText
-                .replace(/["']/g, '')
-                .replace(/mantainence/gi, 'maintenance')
-                .replace(/mantianence/gi, 'maintenance');
-
-            const lines = cleanedText.split('\n');
-            let formattedLines = [];
-            
-            for (let line of lines) {
-                line = line.trim();
-                if (!line) continue;
-
-                if (line.endsWith(':') || /^[A-Z0-9]{2,5}:$/.test(line)) {
-                    if (formattedLines.length > 0) {
-                        formattedLines.push('');
-                    }
-                    formattedLines.push(`<u><b>${line}</b></u>`);
-                } else {
-                    let timeMatch = line.match(/^(\d{2}:\d{2})\s*(.*)$/);
-                    if (timeMatch) {
-                        let time = timeMatch[1];
-                        let rest = timeMatch[2].trim();
-
-                        if (/^[A-Z]{2,3}\s+[a-z]/.test(rest) && !rest.includes(',')) {
-                            rest = rest.replace(/^([A-Z]{2,3})\s+/, '$1, ');
-                        }
-
-                        formattedLines.push(`${time} - ${rest}`);
-                    } else {
-                        formattedLines.push(line);
-                    }
-                }
-            }
-
-            document.getElementById('reportContent').innerHTML = formattedLines.join('\n');
-            let detailsElem = document.getElementById('reportDetails');
-            detailsElem.style.display = 'block';
-            detailsElem.open = true;
-        }
-
-        function copyReport() {
-            const content = document.getElementById('reportContent').innerText;
-            navigator.clipboard.writeText(content).then(() => {
-                const btn = document.querySelector('.copy-btn-custom');
-                btn.textContent = '✅ Copied!';
-                setTimeout(() => {
-                    btn.textContent = '📋 Copy Report';
-                }, 2000);
-            }).catch(err => {
-                alert('Failed to copy text: ' + err);
-            });
-        }
-
-        // Betting logic helpers
-        function escImport(str) {
-            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        }
-
-        function processDataBODT() {
-            const rawText = document.getElementById('bettingDataInput').value.trim();
-            if (!rawText) return;
-
-            const lines = rawText.split('\n');
-            const records = [];
-            const allUsers = new Set();
-            const delimiter = rawText.includes('\t') ? '\t' : ',';
-
-            lines.forEach((line, idx) => {
-                if (idx === 0 && line.toLowerCase().includes('username')) return;
-                const cols = line.split(delimiter);
-                if (cols.length >= 3) {
-                    const username = cols[0].trim();
-                    const gameType = cols[1].trim().toUpperCase();
-                    const validBetting = parseFloat(cols[2]) || 0;
-                    if (username) {
-                        allUsers.add(username);
-                        records.push({ username, gameType, validBetting });
-                    }
-                }
-            });
-
-            const categories = ['RNG', 'FISH', 'PVP', 'LIVE'];
-            const stats = {};
-            categories.forEach(cat => {
-                const catRecords = records.filter(r => r.gameType === cat);
-                const uniqueUsers = new Set(catRecords.map(r => r.username)).size;
-                const totalBet = Math.round(catRecords.reduce((sum, r) => sum + r.validBetting, 0));
-                stats[cat] = { users: uniqueUsers.toLocaleString(), bet: totalBet.toLocaleString() };
-            });
-
-            document.getElementById('rng_users').innerText = stats['RNG'].users;
-            document.getElementById('rng_bet').innerText = stats['RNG'].bet;
-            document.getElementById('fish_users').innerText = stats['FISH'].users;
-            document.getElementById('fish_bet').innerText = stats['FISH'].bet;
-            document.getElementById('pvp_users').innerText = stats['PVP'].users;
-            document.getElementById('pvp_bet').innerText = stats['PVP'].bet;
-            document.getElementById('live_users').innerText = stats['LIVE'].users;
-            document.getElementById('live_bet').innerText = stats['LIVE'].bet;
-            document.getElementById('total_users').innerText = allUsers.size.toLocaleString();
-        }
-
-        function processDataFL88() {
-            const rawText = document.getElementById('bettingDataInputFL88').value.trim();
-            if (!rawText) return;
-
-            const lines = rawText.split('\n');
-            const records = [];
-            const allUsers = new Set();
-            const delimiter = rawText.includes('\t') ? '\t' : ',';
-
-            lines.forEach((line, idx) => {
-                if (idx === 0 && line.toLowerCase().includes('username')) return;
-                const cols = line.split(delimiter);
-                if (cols.length >= 3) {
-                    const username = cols[0].trim();
-                    const gameType = cols[1].trim().toUpperCase();
-                    const validBetting = parseFloat(cols[2]) || 0;
-                    if (username) {
-                        allUsers.add(username);
-                        records.push({ username, gameType, validBetting });
-                    }
-                }
-            });
-
-            const categories = ['RNG', 'FISH', 'LIVE', 'SPORTS'];
-            const stats = {};
-            categories.forEach(cat => {
-                const catRecords = records.filter(r => r.gameType === cat);
-                const uniqueUsers = new Set(catRecords.map(r => r.username)).size;
-                const totalBet = Math.round(catRecords.reduce((sum, r) => sum + r.validBetting, 0));
-                stats[cat] = { users: uniqueUsers.toLocaleString(), bet: totalBet.toLocaleString() };
-            });
-
-            document.getElementById('fl88_rng_users').innerText = stats['RNG'].users;
-            document.getElementById('fl88_rng_bet').innerText = stats['RNG'].bet;
-            document.getElementById('fl88_fish_users').innerText = stats['FISH'].users;
-            document.getElementById('fl88_fish_bet').innerText = stats['FISH'].bet;
-            document.getElementById('fl88_live_users').innerText = stats['LIVE'].users;
-            document.getElementById('fl88_live_bet').innerText = stats['LIVE'].bet;
-            document.getElementById('fl88_sports_users').innerText = stats['SPORTS'].users;
-            document.getElementById('fl88_sports_bet').innerText = stats['SPORTS'].bet;
-            document.getElementById('fl88_total_users').innerText = allUsers.size.toLocaleString();
-        }
-
-        // Initialize empty containers on load
-        renderPlaylist();
+        // Initialize world clocks and playlist on load
+        window.onload = function() {
+            renderWorldClocks();
+            renderAlarms();
+            renderPlaylist();
+        };
     </script>
 </body>
 </html>
