@@ -1843,7 +1843,7 @@
             });
         }
 
-        // BETTING DATA_BO TC Logic
+       // BETTING DATA_BO TC Logic
         function processDataBODT() {
             const rawText = document.getElementById('bettingDataInput').value.trim();
             if (!rawText) return;
@@ -1890,11 +1890,11 @@
             document.getElementById('fish_users').innerText = stats['FISH'].users;
             document.getElementById('fish_bet').innerText = stats['FISH'].bet;
             
-            document.getElementById('pvp_users').innerText = stats['LIVE'].users;
-            document.getElementById('pvp_bet').innerText = stats['LIVE'].bet;
+            document.getElementById('pvp_users').innerText = stats['PVP'].users;
+            document.getElementById('pvp_bet').innerText = stats['PVP'].bet;
             
-            document.getElementById('live_users').innerText = stats['SPORTS'].users;
-            document.getElementById('live_bet').innerText = stats['SPORTS'].bet;
+            document.getElementById('live_users').innerText = stats['LIVE'].users;
+            document.getElementById('live_bet').innerText = stats['LIVE'].bet;
 
             document.getElementById('total_users').innerText = allUsers.size.toLocaleString();
         }
