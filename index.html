@@ -91,6 +91,69 @@
         .dashboard-title { font-size: 24px; font-weight: 700; color: var(--primary); letter-spacing: 1px; margin: 0; }
         .copyright-tag { font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
 
+        /* ANIMATED NEWS TICKER STYLING */
+        .news-ticker-container {
+            display: flex;
+            align-items: center;
+            background: var(--card-bg);
+            border: 1px solid var(--border-active);
+            border-radius: 10px;
+            height: 44px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+        .live-badge {
+            background-color: var(--danger);
+            color: white;
+            font-size: 10px;
+            font-weight: 800;
+            padding: 5px 10px;
+            border-radius: 6px;
+            letter-spacing: 1px;
+            margin-left: 10px;
+            z-index: 5;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+            animation: pulseBadge 1.5s infinite alternate;
+            flex-shrink: 0;
+        }
+        @keyframes pulseBadge {
+            0% { opacity: 0.8; }
+            100% { opacity: 1; box-shadow: 0 0 15px rgba(239, 68, 68, 0.8); }
+        }
+        .ticker-wrapper {
+            overflow: hidden;
+            flex: 1;
+            white-space: nowrap;
+            position: relative;
+        }
+        .ticker-track {
+            display: inline-block;
+            white-space: nowrap;
+            animation: tickerScroll 25s linear infinite;
+        }
+        .ticker-wrapper:hover .ticker-track {
+            animation-play-state: paused;
+        }
+        .ticker-item {
+            display: inline-block;
+            font-size: 12px;
+            color: var(--text-color);
+            padding: 0 30px;
+        }
+        .ticker-item span {
+            color: var(--primary);
+            font-weight: bold;
+            margin-right: 6px;
+        }
+        @keyframes tickerScroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
         .dash-top-grid {
             display: grid;
             grid-template-columns: 2.1fr 1fr;
@@ -691,6 +754,24 @@
                 <div class="dashboard-header-bar">
                     <h1 class="dashboard-title">DASHBOARD</h1>
                     <div class="copyright-tag">✨ COPYRIGHT &copy; 2026 ALL RIGHTS RESERVED BY PIXEL FRIEND. ⚠️</div>
+                </div>
+
+                <!-- ANIMATED NEWS TICKER -->
+                <div class="news-ticker-container">
+                    <div class="live-badge">🔴 LIVE UPDATE</div>
+                    <div class="ticker-wrapper">
+                        <div class="ticker-track">
+                            <span class="ticker-item"><span>SYSTEM:</span> Command center online and fully operational across all remote clusters.</span>
+                            <span class="ticker-item"><span>SECURITY:</span> Encryption protocols verified and running securely.</span>
+                            <span class="ticker-item"><span>UPDATE:</span> World clock synchronizers updated to standard UTC intervals.</span>
+                            <span class="ticker-item"><span>NOTICE:</span> Remember to check pending task deadlines before end of day operations.</span>
+                            <!-- Duplicated items for seamless infinite loop effect -->
+                            <span class="ticker-item"><span>SYSTEM:</span> Command center online and fully operational across all remote clusters.</span>
+                            <span class="ticker-item"><span>SECURITY:</span> Encryption protocols verified and running securely.</span>
+                            <span class="ticker-item"><span>UPDATE:</span> World clock synchronizers updated to standard UTC intervals.</span>
+                            <span class="ticker-item"><span>NOTICE:</span> Remember to check pending task deadlines before end of day operations.</span>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="dash-top-grid">
