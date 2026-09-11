@@ -535,13 +535,18 @@
             <!-- 3. ALARM VIEW -->
             <div id="view-alarm" class="view-section">
                 <h2>ALARM SYSTEM</h2>
-                <p style="color: var(--text-muted);">Set and manage persistent acoustic schedule triggers.</p>
-                <div class="task-creator">
-                    <input type="time" id="alarmTimeInput" style="margin-right: 10px;">
-                    <button class="btn" onclick="setAlarm()">Set Alarm</button>
-                    <button class="btn" style="margin-left: 10px; border-color: var(--warning); color: var(--warning);" onclick="playRegularAlarmSound()">Test Standard Alarm</button>
-                    <button class="btn" style="margin-left: 10px; border-color: var(--primary); color: var(--primary);" onclick="playStrongCountdownAlarmSound()">Test Countdown Alarm</button>
-                    <button class="btn" style="margin-left: 10px; border-color: var(--success); color: var(--success);" onclick="playTaskNotificationSound()">Test Tasks Chime</button>
+                <p style="color: var(--text-muted);">Set and manage persistent acoustic schedule triggers with custom titles.</p>
+                <div class="task-creator" style="display: flex; flex-direction: column; gap: 12px;">
+                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                        <input type="text" id="alarmTitleInput" placeholder="Alarm Title (e.g., Morning Wakeup)..." style="flex: 1; min-width: 200px;">
+                        <input type="time" id="alarmTimeInput">
+                        <button class="btn" onclick="setAlarm()">Set Alarm</button>
+                    </div>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button class="btn" style="border-color: var(--warning); color: var(--warning);" onclick="playRegularAlarmSound()">Test Standard Alarm</button>
+                        <button class="btn" style="border-color: var(--primary); color: var(--primary);" onclick="playStrongCountdownAlarmSound()">Test Countdown Alarm</button>
+                        <button class="btn" style="border-color: var(--success); color: var(--success);" onclick="playTaskNotificationSound()">Test Tasks Chime</button>
+                    </div>
                 </div>
                 <div id="alarmList" style="display: flex; flex-direction: column; gap: 10px;"></div>
             </div>
@@ -982,7 +987,7 @@
                     persistAlarms();
                     renderAlarms();
                     playRegularAlarmSound();
-                    alert(`⏰ ALARM TRIGGERED FOR ${alarm.time}!`);
+                    alert(`⏰ ALARM "${alarm.title || 'Untitled Alarm'}" TRIGGERED FOR ${alarm.time}!`);
                 }
             });
 
@@ -1082,7 +1087,7 @@
             syncCountdownInputs();
         }
 
-        // Alarm System with Persistence
+        // Alarm System with Persistence & Titles
         let alarms = JSON.parse(localStorage.getItem('cyber_alarms_v1') || '[]');
 
         function persistAlarms() {
@@ -1090,11 +1095,22 @@
         }
 
         function setAlarm() {
-            let val = document.getElementById('alarmTimeInput').value;
-            if (!val) return alert('Select alarm time.');
-            alarms.push({ id: Date.now(), time: val, triggered: false });
+            let titleVal = document.getElementById('alarmTitleInput').value.trim();
+            let timeVal = document.getElementById('alarmTimeInput').value;
+            
+            if (!timeVal) return alert('Select alarm time.');
+            
+            alarms.push({ 
+                id: Date.now(), 
+                title: titleVal || 'Alarm', 
+                time: timeVal, 
+                triggered: false 
+            });
+            
             persistAlarms();
             renderAlarms();
+            
+            document.getElementById('alarmTitleInput').value = '';
             document.getElementById('alarmTimeInput').value = '';
         }
 
@@ -1113,7 +1129,10 @@
             }
             container.innerHTML = alarms.map((a) => `
                 <div class="dash-panel" style="display: flex; justify-content: space-between; align-items: center; padding: 12px;">
-                    <span>🔔 Active Alarm: <strong>${a.time}</strong> ${a.triggered ? '<span style="color:var(--warning); font-size:10px;">(Triggered)</span>' : ''}</span>
+                    <div>
+                        <div style="font-size: 13px; font-weight: bold; color: var(--primary);">🔔 ${escImport(a.title || 'Alarm')}</div>
+                        <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Time: <strong>${a.time}</strong> ${a.triggered ? '<span style="color:var(--warning);">(Triggered)</span>' : ''}</div>
+                    </div>
                     <button class="btn btn-danger" onclick="removeAlarm(${a.id})">Remove</button>
                 </div>
             `).join('');
@@ -1415,7 +1434,6 @@
             if (!item) return;
             item.isPinned = !item.isPinned;
             
-            // Sort notes so pinned items automatically jump to the top
             notes.sort((a, b) => {
                 if (a.isPinned === b.isPinned) return 0;
                 return a.isPinned ? -1 : 1;
