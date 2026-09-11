@@ -748,17 +748,24 @@
             <!-- 3. ALARM VIEW -->
             <div id="view-alarm" class="view-section">
                 <h2>ALARM SYSTEM</h2>
-                <p style="color: var(--text-muted);">Set and manage persistent acoustic schedule triggers with custom titles.</p>
+                <p style="color: var(--text-muted);">Set and manage persistent acoustic schedule triggers with custom titles and ringtones.</p>
                 <div class="task-creator" style="display: flex; flex-direction: column; gap: 12px;">
                     <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                         <input type="text" id="alarmTitleInput" placeholder="Alarm Title (e.g., Morning Wakeup)..." style="flex: 1; min-width: 200px;">
                         <input type="time" id="alarmTimeInput">
+                        <select id="alarmRingtoneInput" style="background: var(--bg-deep); border: 1px solid var(--border-active); color: var(--text-color); padding: 10px; border-radius: 6px; font-size: 13px;">
+                            <option value="cyber">Cyber Synth Bell</option>
+                            <option value="digital">Digital Pulse</option>
+                            <option value="harmonic">Harmonic Chime</option>
+                            <option value="bass">Sub-Bass Alert</option>
+                        </select>
                         <button class="btn" onclick="setAlarm()">Set Alarm</button>
                     </div>
                     <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                        <button class="btn" style="border-color: var(--warning); color: var(--warning);" onclick="playRegularAlarmSound()">Test Standard Alarm</button>
-                        <button class="btn" style="border-color: var(--primary); color: var(--primary);" onclick="playStrongCountdownAlarmSound()">Test Countdown Alarm</button>
-                        <button class="btn" style="border-color: var(--success); color: var(--success);" onclick="playTaskNotificationSound()">Test Tasks Chime</button>
+                        <button class="btn" style="border-color: var(--warning); color: var(--warning);" onclick="playSoundByName('cyber')">Test Cyber Bell</button>
+                        <button class="btn" style="border-color: var(--primary); color: var(--primary);" onclick="playSoundByName('digital')">Test Digital Pulse</button>
+                        <button class="btn" style="border-color: var(--success); color: var(--success);" onclick="playSoundByName('harmonic')">Test Harmonic Chime</button>
+                        <button class="btn" style="border-color: var(--danger); color: var(--danger);" onclick="playSoundByName('bass')">Test Sub-Bass</button>
                     </div>
                 </div>
                 <div id="alarmList" style="display: flex; flex-direction: column; gap: 10px;"></div>
@@ -1054,7 +1061,7 @@
 
                 <div class="logs-container-card">
                     <div style="font-size: 16px; font-weight: bold; color: var(--text-color); margin-bottom: 8px;">Paste Raw Operational Logs</div>
-                    <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 15px;">Paste your raw logs below to instantly parse and generate standardized status reports[cite: 2]:</p>
+                    <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 15px;">Paste your raw logs below to instantly parse and generate standardized status reports:</p>
                     
                     <textarea id="rawInput" class="logs-textarea" placeholder="Paste your raw logs here..."></textarea>
                     <br>
@@ -1080,7 +1087,7 @@
 
                 <div class="betting-container-card">
                     <div style="font-size: 16px; font-weight: bold; color: var(--text-color); margin-bottom: 8px;">Paste Raw Data (Tab-separated or Excel rows)</div>
-                    <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 15px;">Paste your rows containing columns: <code>Username</code>, <code>Game Type</code>, <code>Game Valid Betting</code>, etc[cite: 2].</p>
+                    <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 15px;">Paste your rows containing columns: <code>Username</code>, <code>Game Type</code>, <code>Game Valid Betting</code>, etc.</p>
                     
                     <textarea id="bettingDataInput" class="logs-textarea" placeholder="Paste Excel/TSV data here..."></textarea>
                     <br>
@@ -1244,93 +1251,95 @@
             if(element) element.classList.add('active');
         }
 
-        // Standard Alarm Sound (for general schedule alarms)
-        function playRegularAlarmSound() {
+        // Advanced Multi-Ringtone Sound System
+        function playSoundByName(type) {
             try {
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                for (let i = 0; i < 3; i++) {
-                    let startTime = audioCtx.currentTime + (i * 0.35);
-                    let osc1 = audioCtx.createOscillator();
-                    let osc2 = audioCtx.createOscillator();
-                    let gainNode = audioCtx.createGain();
+                if (type === 'cyber') {
+                    for (let i = 0; i < 3; i++) {
+                        let startTime = audioCtx.currentTime + (i * 0.35);
+                        let osc1 = audioCtx.createOscillator();
+                        let osc2 = audioCtx.createOscillator();
+                        let gainNode = audioCtx.createGain();
 
-                    osc1.type = 'sawtooth';
-                    osc1.frequency.setValueAtTime(880, startTime);
-                    osc2.type = 'square';
-                    osc2.frequency.setValueAtTime(1320, startTime);
+                        osc1.type = 'sawtooth';
+                        osc1.frequency.setValueAtTime(880, startTime);
+                        osc2.type = 'square';
+                        osc2.frequency.setValueAtTime(1320, startTime);
 
-                    gainNode.gain.setValueAtTime(0.3, startTime);
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.25);
+                        gainNode.gain.setValueAtTime(0.3, startTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.25);
 
-                    osc1.connect(gainNode);
-                    osc2.connect(gainNode);
-                    gainNode.connect(audioCtx.destination);
+                        osc1.connect(gainNode);
+                        osc2.connect(gainNode);
+                        gainNode.connect(audioCtx.destination);
 
-                    osc1.start(startTime);
-                    osc2.start(startTime);
-                    osc1.stop(startTime + 0.25);
-                    osc2.stop(startTime + 0.25);
-                }
-            } catch (e) {
-                console.log("AudioContext error", e);
-            }
-        }
+                        osc1.start(startTime);
+                        osc2.start(startTime);
+                        osc1.stop(startTime + 0.25);
+                        osc2.stop(startTime + 0.25);
+                    }
+                } else if (type === 'digital') {
+                    for (let i = 0; i < 5; i++) {
+                        let startTime = audioCtx.currentTime + (i * 0.18);
+                        let osc1 = audioCtx.createOscillator();
+                        let osc2 = audioCtx.createOscillator();
+                        let gainNode = audioCtx.createGain();
 
-        // Distinct Countdown Alarm Sound
-        function playStrongCountdownAlarmSound() {
-            try {
-                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                for (let i = 0; i < 5; i++) {
-                    let startTime = audioCtx.currentTime + (i * 0.18);
-                    let osc1 = audioCtx.createOscillator();
-                    let osc2 = audioCtx.createOscillator();
-                    let gainNode = audioCtx.createGain();
+                        osc1.type = 'triangle';
+                        osc1.frequency.setValueAtTime(1760, startTime);
+                        osc2.type = 'sawtooth';
+                        osc2.frequency.setValueAtTime(2637, startTime);
 
-                    osc1.type = 'triangle';
-                    osc1.frequency.setValueAtTime(1760, startTime);
-                    
-                    osc2.type = 'sawtooth';
-                    osc2.frequency.setValueAtTime(2637, startTime);
+                        gainNode.gain.setValueAtTime(0.35, startTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.12);
 
-                    gainNode.gain.setValueAtTime(0.35, startTime);
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.12);
+                        osc1.connect(gainNode);
+                        osc2.connect(gainNode);
+                        gainNode.connect(audioCtx.destination);
 
-                    osc1.connect(gainNode);
-                    osc2.connect(gainNode);
-                    gainNode.connect(audioCtx.destination);
+                        osc1.start(startTime);
+                        osc2.start(startTime);
+                        osc1.stop(startTime + 0.12);
+                        osc2.stop(startTime + 0.12);
+                    }
+                } else if (type === 'harmonic') {
+                    const frequencies = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+                    frequencies.forEach((freq, index) => {
+                        let startTime = audioCtx.currentTime + (index * 0.08);
+                        let osc = audioCtx.createOscillator();
+                        let gainNode = audioCtx.createGain();
 
-                    osc1.start(startTime);
-                    osc2.start(startTime);
-                    osc1.stop(startTime + 0.12);
-                    osc2.stop(startTime + 0.12);
-                }
-            } catch (e) {
-                console.log("AudioContext error", e);
-            }
-        }
+                        osc.type = index === frequencies.length - 1 ? 'square' : 'sine';
+                        osc.frequency.setValueAtTime(freq, startTime);
 
-        // Distinct, Strong Tasks & Logs Notification Chime
-        function playTaskNotificationSound() {
-            try {
-                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                const frequencies = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
-                frequencies.forEach((freq, index) => {
-                    let startTime = audioCtx.currentTime + (index * 0.08);
+                        gainNode.gain.setValueAtTime(0.25, startTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + 0.25);
+
+                        osc.connect(gainNode);
+                        gainNode.connect(audioCtx.destination);
+
+                        osc.start(startTime);
+                        osc.stop(startTime + 0.25);
+                    });
+                } else if (type === 'bass') {
+                    let startTime = audioCtx.currentTime;
                     let osc = audioCtx.createOscillator();
                     let gainNode = audioCtx.createGain();
 
-                    osc.type = index === frequencies.length - 1 ? 'square' : 'sine';
-                    osc.frequency.setValueAtTime(freq, startTime);
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(150, startTime);
+                    osc.frequency.exponentialRampToValueAtTime(40, startTime + 0.6);
 
-                    gainNode.gain.setValueAtTime(0.25, startTime);
-                    gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + 0.25);
+                    gainNode.gain.setValueAtTime(0.5, startTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.6);
 
                     osc.connect(gainNode);
                     gainNode.connect(audioCtx.destination);
 
                     osc.start(startTime);
-                    osc.stop(startTime + 0.25);
-                });
+                    osc.stop(startTime + 0.6);
+                }
             } catch (e) {
                 console.log("AudioContext error", e);
             }
@@ -1427,7 +1436,7 @@
                     alarm.triggered = true;
                     persistAlarms();
                     renderAlarms();
-                    playRegularAlarmSound();
+                    playSoundByName(alarm.ringtone || 'cyber');
                     alert(`⏰ ALARM "${alarm.title || 'Untitled Alarm'}" TRIGGERED FOR ${alarm.time}!`);
                 }
             });
@@ -1438,7 +1447,7 @@
                     if (now >= dueDateObj) {
                         note.notified = true;
                         persistNotes();
-                        playTaskNotificationSound();
+                        playSoundByName('harmonic');
                         alert(`📁 TASK DUE ALERT: "${note.taskName}" is due!`);
                     }
                 }
@@ -1505,7 +1514,7 @@
                     updateCountdownDisplay();
                 } else {
                     pauseCountdown();
-                    playStrongCountdownAlarmSound();
+                    playSoundByName('digital');
                     alert('Countdown timer finished!');
                     if (document.getElementById('cdRepeatCheckbox').checked) {
                         cdTotalSeconds = cdInitialSeconds;
@@ -1528,16 +1537,17 @@
             syncCountdownInputs();
         }
 
-        // Alarm System with Persistence & Titles
-        let alarms = JSON.parse(localStorage.getItem('cyber_alarms_v1') || '[]');
+        // Alarm System with Persistence, Titles, and Ringtone Options
+        let alarms = JSON.parse(localStorage.getItem('cyber_alarms_v2') || '[]');
 
         function persistAlarms() {
-            localStorage.setItem('cyber_alarms_v1', JSON.stringify(alarms));
+            localStorage.setItem('cyber_alarms_v2', JSON.stringify(alarms));
         }
 
         function setAlarm() {
             let titleVal = document.getElementById('alarmTitleInput').value.trim();
             let timeVal = document.getElementById('alarmTimeInput').value;
+            let ringtoneVal = document.getElementById('alarmRingtoneInput').value;
             
             if (!timeVal) return alert('Select alarm time.');
             
@@ -1545,6 +1555,7 @@
                 id: Date.now(), 
                 title: titleVal || 'Alarm', 
                 time: timeVal, 
+                ringtone: ringtoneVal,
                 triggered: false 
             });
             
@@ -1571,10 +1582,13 @@
             container.innerHTML = alarms.map((a) => `
                 <div class="dash-panel" style="display: flex; justify-content: space-between; align-items: center; padding: 12px;">
                     <div>
-                        <div style="font-size: 13px; font-weight: bold; color: var(--primary);">🔔 ${escImport(a.title || 'Alarm')}</div>
+                        <div style="font-size: 13px; font-weight: bold; color: var(--primary);">🔔 ${escImport(a.title || 'Alarm')} <span style="font-size: 10px; color: var(--text-muted); font-weight: normal;">(${a.ringtone || 'cyber'})</span></div>
                         <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Time: <strong>${a.time}</strong> ${a.triggered ? '<span style="color:var(--warning);">(Triggered)</span>' : ''}</div>
                     </div>
-                    <button class="btn btn-danger" onclick="removeAlarm(${a.id})">Remove</button>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <button class="btn" style="padding: 4px 8px; font-size: 10px;" onclick="playSoundByName('${a.ringtone || 'cyber'}')">Preview Sound</button>
+                        <button class="btn btn-danger" onclick="removeAlarm(${a.id})">Remove</button>
+                    </div>
                 </div>
             `).join('');
         }
@@ -2122,7 +2136,7 @@
             editor.innerHTML = ''; 
             document.getElementById('taskNameInput').value = ''; 
             document.getElementById('dueDateInput').value = ''; 
-            playTaskNotificationSound(); 
+            playSoundByName('harmonic'); 
             renderNotes(); 
         }
 
@@ -2265,7 +2279,7 @@
                 pinnedClocks = JSON.parse(event.newValue || '[]');
                 renderWorldClocks();
                 updateDashboardWidgets();
-            } else if (event.key === 'cyber_alarms_v1') {
+            } else if (event.key === 'cyber_alarms_v2') {
                 alarms = JSON.parse(event.newValue || '[]');
                 renderAlarms();
             } else if (event.key === 'cyber_playlist_v3') {
