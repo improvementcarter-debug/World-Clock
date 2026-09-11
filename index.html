@@ -340,17 +340,28 @@
             align-items: center;
             gap: 15px;
         }
-        .audio-play-main-btn {
+        .audio-playback-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+        .audio-ctrl-btn {
             background: var(--card-bg);
             border: 1px solid var(--border-active);
             color: var(--primary);
-            width: 38px; height: 38px;
+            width: 34px; height: 34px;
             border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
-            cursor: pointer; font-weight: bold; flex-shrink: 0;
+            cursor: pointer; font-weight: bold;
             transition: 0.2s;
+            font-size: 12px;
         }
-        .audio-play-main-btn:hover { background: var(--accent-glow); border-color: var(--primary); }
+        .audio-ctrl-btn.main-play {
+            width: 42px; height: 42px;
+            font-size: 14px;
+        }
+        .audio-ctrl-btn:hover { background: var(--accent-glow); border-color: var(--primary); }
         .audio-timeline-wrap { flex: 1; display: flex; flex-direction: column; gap: 6px; }
         .audio-time-label { font-size: 11px; color: var(--text-muted); font-family: monospace; }
         .audio-seek-slider { width: 100%; accent-color: var(--primary); cursor: pointer; }
@@ -1015,7 +1026,11 @@
 
                     <!-- Audio Player Control Box -->
                     <div class="audio-player-box">
-                        <button class="audio-play-main-btn" id="audioPlayPauseBtn" onclick="togglePlayAudio()">▶</button>
+                        <div class="audio-playback-controls">
+                            <button class="audio-ctrl-btn" onclick="playPreviousTrack()" title="Previous Track">⏮</button>
+                            <button class="audio-ctrl-btn main-play" id="audioPlayPauseBtn" onclick="togglePlayAudio()" title="Play/Pause">▶</button>
+                            <button class="audio-ctrl-btn" onclick="playNextTrack()" title="Next Track">⏭</button>
+                        </div>
                         <div class="audio-timeline-wrap">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
                                 <span id="audioCurrentTime" class="audio-time-label">0:00 / 0:00</span>
@@ -1038,7 +1053,8 @@
                                 <option value="Public">Public</option>
                             </select>
                         </div>
-                        <button class="audio-btn-action" id="audioLoopBtn" onclick="toggleLoopAudio()">LOOP: OFF</button>
+                        <button class="audio-btn-action" id="audioShuffleBtn" onclick="toggleShuffleAudio()">SHUFFLE: OFF</button>
+                        <button class="audio-btn-action" id="audioLoopBtn" onclick="toggleLoopAudio()">REPEAT: OFF</button>
                         <button class="audio-btn-action audio-btn-danger" onclick="clearPlaylist()">CLEAR PLAYLIST</button>
                     </div>
 
@@ -1496,7 +1512,6 @@
             document.getElementById('persistentAlertModal').classList.remove('active');
         }
 
-        // Preview sound function for manual testing without locking alert
         function playSoundByName(type) {
             playSingleSoundInstance(type);
         }
@@ -1575,7 +1590,7 @@
             }).join('');
         }
 
-        // Live Clock Updates & Continuous Alert Checkers (Alarm, Countdown, Tasks & Logs)
+        // Live Clock Updates & Continuous Alert Checkers
         setInterval(() => {
             const now = new Date();
             const utc = now.toUTCString().slice(17, 25);
@@ -1690,7 +1705,7 @@
             syncCountdownInputs();
         }
 
-        // Alarm System with Persistence, Titles, and Ringtone Options
+        // Alarm System
         let alarms = JSON.parse(localStorage.getItem('cyber_alarms_v2') || '[]');
 
         function persistAlarms() {
@@ -1746,15 +1761,16 @@
             `).join('');
         }
 
-        // Cyber Audio Matrix & Playlist System
-        let playlistTracks = JSON.parse(localStorage.getItem('cyber_playlist_v3') || '[]');
+        // Cyber Audio Matrix & Playlist System (Upgraded with Previous, Next, Shuffle, Repeat & Editable Titles)
+        let playlistTracks = JSON.parse(localStorage.getItem('cyber_playlist_v4') || '[]');
         let currentTrackId = null;
         let isLooping = false;
+        let isShuffling = false;
 
         const audioEl = document.getElementById('globalAudioElement');
 
         function persistPlaylist() {
-            localStorage.setItem('cyber_playlist_v3', JSON.stringify(playlistTracks));
+            localStorage.setItem('cyber_playlist_v4', JSON.stringify(playlistTracks));
         }
 
         function handleAudioUpload(event) {
@@ -1766,9 +1782,11 @@
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
                 const fileUrl = URL.createObjectURL(file);
+                // Strip extension for cleaner initial track title editing
+                const cleanName = file.name.replace(/\.[^/.]+$/, "");
                 playlistTracks.push({ 
                     id: Date.now() + i,
-                    name: file.name, 
+                    name: cleanName, 
                     url: fileUrl,
                     visibility: defaultVis 
                 });
@@ -1793,6 +1811,21 @@
             renderPlaylist();
         }
 
+        function editTrackTitle(id, event) {
+            event.stopPropagation();
+            const track = playlistTracks.find(t => t.id === id);
+            if (!track) return;
+            const newTitle = prompt("Edit track title:", track.name);
+            if (newTitle !== null && newTitle.trim() !== "") {
+                track.name = newTitle.trim();
+                persistPlaylist();
+                renderPlaylist();
+                if (currentTrackId === id) {
+                    document.getElementById('audioNowPlaying').innerText = `Now Playing: ${track.name}`;
+                }
+            }
+        }
+
         function renderPlaylist() {
             const container = document.getElementById('playlistTrackContainer');
             if (!container) return;
@@ -1814,13 +1847,13 @@
                 return `
                     <div class="playlist-track-item ${isPlaying ? 'active' : ''}" onclick="loadTrackById(${track.id}); playAudio();">
                         <span style="display: flex; align-items: center; gap: 8px;">
-                            🎵 ${track.name}
+                            🎵 ${escImport(track.name)}
                         </span>
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <button class="btn" style="padding: 2px 8px; font-size: 10px; border-color: ${track.visibility === 'Public' ? 'var(--success)' : 'var(--warning)'}; color: ${track.visibility === 'Public' ? 'var(--success)' : 'var(--warning)'};" onclick="toggleTrackVisibility(${track.id}, event)" title="Click to instantly toggle visibility">
+                        <div style="display: flex; align-items: center; gap: 8px;" onclick="event.stopPropagation()">
+                            <button class="btn" style="padding: 2px 6px; font-size: 10px;" onclick="editTrackTitle(${track.id}, event)" title="Edit Track Title">✏️ Edit</button>
+                            <button class="btn" style="padding: 2px 8px; font-size: 10px; border-color: ${track.visibility === 'Public' ? 'var(--success)' : 'var(--warning)'}; color: ${track.visibility === 'Public' ? 'var(--success)' : 'var(--warning)'};" onclick="toggleTrackVisibility(${track.id}, event)" title="Toggle Visibility">
                                 👁️ ${track.visibility || 'Private'}
                             </button>
-                            <span style="font-size: 10px; color: var(--text-muted);">${isPlaying ? 'PLAYING' : 'READY'}</span>
                         </div>
                     </div>
                 `;
@@ -1860,6 +1893,34 @@
             }
         }
 
+        function playNextTrack() {
+            if (playlistTracks.length === 0) return;
+            if (isShuffling) {
+                const randomIndex = Math.floor(Math.random() * playlistTracks.length);
+                loadTrackById(playlistTracks[randomIndex].id);
+                playAudio();
+                return;
+            }
+            const currentIndex = playlistTracks.findIndex(t => t.id === currentTrackId);
+            let nextIndex = currentIndex + 1;
+            if (nextIndex >= playlistTracks.length) {
+                nextIndex = 0; // Loop back to start
+            }
+            loadTrackById(playlistTracks[nextIndex].id);
+            playAudio();
+        }
+
+        function playPreviousTrack() {
+            if (playlistTracks.length === 0) return;
+            const currentIndex = playlistTracks.findIndex(t => t.id === currentTrackId);
+            let prevIndex = currentIndex - 1;
+            if (prevIndex < 0) {
+                prevIndex = playlistTracks.length - 1; // Wrap to last track
+            }
+            loadTrackById(playlistTracks[prevIndex].id);
+            playAudio();
+        }
+
         function seekAudio(value) {
             if (!audioEl.duration) return;
             audioEl.currentTime = (value / 100) * audioEl.duration;
@@ -1869,6 +1930,20 @@
             audioEl.volume = val;
         }
 
+        function toggleShuffleAudio() {
+            isShuffling = !isShuffling;
+            const btn = document.getElementById('audioShuffleBtn');
+            if (isShuffling) {
+                btn.style.borderColor = 'var(--primary)';
+                btn.style.background = 'var(--accent-glow)';
+                btn.innerText = 'SHUFFLE: ON';
+            } else {
+                btn.style.borderColor = 'var(--border-active)';
+                btn.style.background = 'transparent';
+                btn.innerText = 'SHUFFLE: OFF';
+            }
+        }
+
         function toggleLoopAudio() {
             isLooping = !isLooping;
             audioEl.loop = isLooping;
@@ -1876,11 +1951,11 @@
             if (isLooping) {
                 btn.style.borderColor = 'var(--primary)';
                 btn.style.background = 'var(--accent-glow)';
-                btn.innerText = 'LOOP: ON';
+                btn.innerText = 'REPEAT: ON';
             } else {
                 btn.style.borderColor = 'var(--border-active)';
                 btn.style.background = 'transparent';
-                btn.innerText = 'LOOP: OFF';
+                btn.innerText = 'REPEAT: OFF';
             }
         }
 
@@ -1913,14 +1988,8 @@
         });
 
         audioEl.addEventListener('ended', () => {
-            if (!isLooping && playlistTracks.length > 0) {
-                const currentIndex = playlistTracks.findIndex(t => t.id === currentTrackId);
-                if (currentIndex !== -1 && currentIndex < playlistTracks.length - 1) {
-                    loadTrackById(playlistTracks[currentIndex + 1].id);
-                    playAudio();
-                } else {
-                    document.getElementById('audioPlayPauseBtn').innerText = '▶';
-                }
+            if (!isLooping) {
+                playNextTrack();
             }
         });
 
@@ -1999,7 +2068,7 @@
             document.getElementById('resultsSection').style.display = 'block';
         }
 
-        // Transaction Success Rate Calculator Logic (Capped at 100%)
+        // Transaction Success Rate Calculator Logic
         function calculateTxRate(id) {
             const table = document.querySelector(`[data-row-id="${id}"]`);
             const successVal = parseFloat(table.querySelector(".success-input").value) || 0;
@@ -2076,7 +2145,11 @@
             });
         }
 
-       // BETTING DATA_BO TC Logic
+        // Betting logic helpers
+        function escImport(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
         function processDataBODT() {
             const rawText = document.getElementById('bettingDataInput').value.trim();
             if (!rawText) return;
@@ -2084,18 +2157,15 @@
             const lines = rawText.split('\n');
             const records = [];
             const allUsers = new Set();
-
             const delimiter = rawText.includes('\t') ? '\t' : ',';
 
             lines.forEach((line, idx) => {
                 if (idx === 0 && line.toLowerCase().includes('username')) return;
-                
                 const cols = line.split(delimiter);
                 if (cols.length >= 3) {
                     const username = cols[0].trim();
                     const gameType = cols[1].trim().toUpperCase();
                     const validBetting = parseFloat(cols[2]) || 0;
-
                     if (username) {
                         allUsers.add(username);
                         records.push({ username, gameType, validBetting });
@@ -2105,34 +2175,24 @@
 
             const categories = ['RNG', 'FISH', 'PVP', 'LIVE'];
             const stats = {};
-
             categories.forEach(cat => {
                 const catRecords = records.filter(r => r.gameType === cat);
                 const uniqueUsers = new Set(catRecords.map(r => r.username)).size;
                 const totalBet = Math.round(catRecords.reduce((sum, r) => sum + r.validBetting, 0));
-
-                stats[cat] = {
-                    users: uniqueUsers.toLocaleString(),
-                    bet: totalBet.toLocaleString()
-                };
+                stats[cat] = { users: uniqueUsers.toLocaleString(), bet: totalBet.toLocaleString() };
             });
 
             document.getElementById('rng_users').innerText = stats['RNG'].users;
             document.getElementById('rng_bet').innerText = stats['RNG'].bet;
-            
             document.getElementById('fish_users').innerText = stats['FISH'].users;
             document.getElementById('fish_bet').innerText = stats['FISH'].bet;
-            
             document.getElementById('pvp_users').innerText = stats['PVP'].users;
             document.getElementById('pvp_bet').innerText = stats['PVP'].bet;
-            
             document.getElementById('live_users').innerText = stats['LIVE'].users;
             document.getElementById('live_bet').innerText = stats['LIVE'].bet;
-
             document.getElementById('total_users').innerText = allUsers.size.toLocaleString();
         }
 
-        // BETTING DATA_FL88 + FU88 TC Logic
         function processDataFL88() {
             const rawText = document.getElementById('bettingDataInputFL88').value.trim();
             if (!rawText) return;
@@ -2140,18 +2200,15 @@
             const lines = rawText.split('\n');
             const records = [];
             const allUsers = new Set();
-
             const delimiter = rawText.includes('\t') ? '\t' : ',';
 
             lines.forEach((line, idx) => {
                 if (idx === 0 && line.toLowerCase().includes('username')) return;
-                
                 const cols = line.split(delimiter);
                 if (cols.length >= 3) {
                     const username = cols[0].trim();
                     const gameType = cols[1].trim().toUpperCase();
                     const validBetting = parseFloat(cols[2]) || 0;
-
                     if (username) {
                         allUsers.add(username);
                         records.push({ username, gameType, validBetting });
@@ -2161,271 +2218,26 @@
 
             const categories = ['RNG', 'FISH', 'LIVE', 'SPORTS'];
             const stats = {};
-
             categories.forEach(cat => {
                 const catRecords = records.filter(r => r.gameType === cat);
                 const uniqueUsers = new Set(catRecords.map(r => r.username)).size;
                 const totalBet = Math.round(catRecords.reduce((sum, r) => sum + r.validBetting, 0));
-
-                stats[cat] = {
-                    users: uniqueUsers.toLocaleString(),
-                    bet: totalBet.toLocaleString()
-                };
+                stats[cat] = { users: uniqueUsers.toLocaleString(), bet: totalBet.toLocaleString() };
             });
 
             document.getElementById('fl88_rng_users').innerText = stats['RNG'].users;
             document.getElementById('fl88_rng_bet').innerText = stats['RNG'].bet;
-            
             document.getElementById('fl88_fish_users').innerText = stats['FISH'].users;
             document.getElementById('fl88_fish_bet').innerText = stats['FISH'].bet;
-            
             document.getElementById('fl88_live_users').innerText = stats['LIVE'].users;
             document.getElementById('fl88_live_bet').innerText = stats['LIVE'].bet;
-            
             document.getElementById('fl88_sports_users').innerText = stats['SPORTS'].users;
             document.getElementById('fl88_sports_bet').innerText = stats['SPORTS'].bet;
-
             document.getElementById('fl88_total_users').innerText = allUsers.size.toLocaleString();
         }
 
-        // Tasks and Logs Management (with Task Pinned Feature)
-        let notes = JSON.parse(localStorage.getItem('cyber_tasks_v9') || '[]').map(n => ({
-            taskName: '', priority: 'Medium', visibility: 'Private', dueDate: '', notified: false, isPinned: false, ...n
-        }));
-        let fullscreenEditingTaskId = null;
-
-        function persistNotes() {
-            localStorage.setItem('cyber_tasks_v9', JSON.stringify(notes));
-            updateMetrics();
-        }
-
-        function updateMetrics() {
-            const total = notes.length;
-            const pending = notes.filter(n => n.status === 'Pending').length;
-            const progressCount = notes.filter(n => n.status === 'In Progress').length;
-            const completed = notes.filter(n => n.status === 'Completed').length;
-            const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
-
-            if(document.getElementById('metricTotal')) document.getElementById('metricTotal').innerText = total;
-            if(document.getElementById('metricPending')) document.getElementById('metricPending').innerText = pending;
-            if(document.getElementById('metricProgress')) document.getElementById('metricProgress').innerText = progressCount;
-            if(document.getElementById('metricCompleted')) document.getElementById('metricCompleted').innerText = completed;
-            if(document.getElementById('metricProgressPercent')) document.getElementById('metricProgressPercent').innerText = percent + '%';
-
-            updateDashboardWidgets();
-        }
-
-        function updateDashboardWidgets() {
-            const taskContainer = document.getElementById('dashboardTaskProgressContent');
-            if (taskContainer) {
-                const upcoming = notes.filter(n => n.dueDate && n.status !== 'Completed');
-                if (upcoming.length === 0) {
-                    taskContainer.innerText = "No upcoming due dates.";
-                } else {
-                    taskContainer.innerHTML = upcoming.slice(0, 3).map(n => `<div style="margin-bottom: 4px;">📁 <strong>${escImport(n.taskName)}</strong> — Due: ${new Date(n.dueDate).toLocaleString()}</div>`).join('');
-                }
-            }
-
-            const pinnedContainer = document.getElementById('dashboardPinnedClocksContent');
-            if (pinnedContainer) {
-                if (pinnedClocks.length === 0) {
-                    pinnedContainer.innerText = "No clocks pinned. Open World Clock and press Pin.";
-                } else {
-                    pinnedContainer.innerHTML = `
-                        <div class="pinned-dashboard-grid">
-                            ${pinnedClocks.map(idx => {
-                                const tz = timezonesConfig[idx];
-                                const now = new Date();
-                                const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000);
-                                const tzDate = new Date(utcTime + (tz.offset * 3600000));
-                                
-                                let hours = tzDate.getHours();
-                                const minutes = tzDate.getMinutes().toString().padStart(2, '0');
-                                const seconds = tzDate.getSeconds().toString().padStart(2, '0');
-                                const ampm = hours >= 12 ? 'PM' : 'AM';
-                                hours = hours % 12;
-                                hours = hours ? hours : 12;
-                                const timeStr = `${hours.toString().padStart(2, '0')}:${minutes}:${seconds}`;
-                                const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
-                                const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-                                const fullDateStr = `${days[tzDate.getDay()]}, ${months[tzDate.getMonth()]} ${tzDate.getDate()}, ${tzDate.getFullYear()}`;
-
-                                return `
-                                    <div class="pinned-dash-item">
-                                        <div style="font-size: 10px; color: var(--text-muted); font-weight: bold; margin-bottom: 4px;">${tz.name}</div>
-                                        <div style="font-size: 16px; font-family: monospace; font-weight: bold; color: var(--primary);">${timeStr} <span style="font-size: 10px; color: var(--warning);">${ampm}</span></div>
-                                        <div style="font-size: 9px; color: var(--text-muted); margin-top: 2px;">${fullDateStr}</div>
-                                    </div>
-                                `;
-                            }).join('')}
-                        </div>
-                    `;
-                }
-            }
-        }
-
-        function saveNote() {
-            const editor = document.getElementById('noteInputBox'); 
-            const content = editor.innerHTML.trim();
-            const taskName = (document.getElementById('taskNameInput').value || '').trim();
-            
-            if(!taskName){ alert('Please enter a Task Name.'); document.getElementById('taskNameInput').focus(); return; }
-            if(!content || content === '<br>'){ alert('Please enter task details.'); return; }
-            
-            notes.unshift({
-                id: Date.now(),
-                taskName,
-                content,
-                status: document.getElementById('statusInput').value,
-                priority: document.getElementById('priorityInput').value,
-                visibility: document.getElementById('visibilityInput').value, 
-                dueDate: document.getElementById('dueDateInput').value,
-                notified: false,
-                isPinned: false,
-                date: new Date().toLocaleDateString()
-            });
-            
-            persistNotes(); 
-            editor.innerHTML = ''; 
-            document.getElementById('taskNameInput').value = ''; 
-            document.getElementById('dueDateInput').value = ''; 
-            playSoundByName('harmonic'); 
-            renderNotes(); 
-        }
-
-        function toggleTaskVisibility(id) {
-            const item = notes.find(n => n.id === id);
-            if (!item) return;
-            item.visibility = item.visibility === 'Public' ? 'Private' : 'Public';
-            persistNotes();
-            renderNotes();
-        }
-
-        function toggleTaskPin(id) {
-            const item = notes.find(n => n.id === id);
-            if (!item) return;
-            item.isPinned = !item.isPinned;
-            
-            notes.sort((a, b) => {
-                if (a.isPinned === b.isPinned) return 0;
-                return a.isPinned ? -1 : 1;
-            });
-
-            persistNotes();
-            renderNotes();
-        }
-
-        function deleteNote(id) {
-            if(confirm('Confirm deletion of this task entry?')) {
-                notes = notes.filter(n => n.id !== id);
-                persistNotes();
-                renderNotes();
-            }
-        }
-
-        function openFullscreenTaskEditor(id) {
-            const item = notes.find(n => n.id === id);
-            if (!item) return;
-            fullscreenEditingTaskId = id;
-            document.getElementById('fullscreenTaskName').value = item.taskName || '';
-            document.getElementById('fullscreenTaskStatus').value = item.status || 'Pending';
-            document.getElementById('fullscreenTaskPriority').value = item.priority || 'Medium';
-            document.getElementById('fullscreenTaskVisibility').value = item.visibility || 'Private'; 
-            document.getElementById('fullscreenTaskDue').value = item.dueDate || '';
-            document.getElementById('fullscreenTaskContent').innerHTML = item.content || '';
-            document.getElementById('fullscreenTaskEditor').classList.add('open');
-            document.body.style.overflow = 'hidden';
-        }
-
-        function closeFullscreenTaskEditor() {
-            document.getElementById('fullscreenTaskEditor').classList.remove('open');
-            document.body.style.overflow = 'auto';
-            fullscreenEditingTaskId = null;
-        }
-
-        function saveFullscreenTaskEditor() {
-            const item = notes.find(n => n.id === fullscreenEditingTaskId);
-            if (!item) return closeFullscreenTaskEditor();
-            
-            const name = document.getElementById('fullscreenTaskName').value.trim();
-            const content = document.getElementById('fullscreenTaskContent').innerHTML.trim();
-            
-            if (!name) return alert('Please enter a Task Name.');
-            if (!content || content === '<br>') return alert('Please enter task content.');
-            
-            item.taskName = name;
-            item.content = content;
-            item.status = document.getElementById('fullscreenTaskStatus').value;
-            item.priority = document.getElementById('fullscreenTaskPriority').value;
-            item.visibility = document.getElementById('fullscreenTaskVisibility').value; 
-            item.dueDate = document.getElementById('fullscreenTaskDue').value;
-            
-            persistNotes();
-            renderNotes();
-            closeFullscreenTaskEditor();
-        }
-
-        function escImport(str) {
-            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        }
-
-        function renderNotes() {
-            const grid = document.getElementById('notesGrid');
-            if(!grid) return;
-            const visibilityFilter = document.getElementById('visibilityFilter').value;
-            
-            const filteredNotes = notes.filter(item => {
-                if (visibilityFilter === 'All') return true;
-                return item.visibility === visibilityFilter;
-            });
-
-            if (filteredNotes.length === 0) {
-                grid.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 30px;">No task elements match filter criteria.</div>`;
-                updateMetrics();
-                return;
-            }
-
-            grid.innerHTML = filteredNotes.map(item => {
-                let due = item.dueDate ? new Date(item.dueDate) : null;
-                let overdue = due && due < new Date() && item.status !== 'Completed';
-                
-                return `
-                <div class="note-card ${item.isPinned ? 'pinned-task-card' : ''}" id="note-card-${item.id}">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div class="task-name-display">${escImport(item.taskName)}</div>
-                        <button class="btn" style="padding: 3px 10px; font-size: 10px; border-color: ${item.isPinned ? 'var(--primary)' : 'var(--border-active)'}; color: ${item.isPinned ? 'var(--primary)' : 'var(--text-muted)'};" onclick="toggleTaskPin(${item.id})">
-                            📌 ${item.isPinned ? 'PINNED' : 'PIN'}
-                        </button>
-                    </div>
-                    <div class="note-content-display">${item.content}</div>
-                    <div class="status-badge-container">
-                        <div class="task-meta">
-                            <span class="status-badge">${item.status}</span>
-                            <span class="priority-badge priority-${item.priority}">${item.priority}</span>
-                            <button class="btn" style="padding: 2px 6px; font-size: 10px; border-color: ${item.visibility === 'Public' ? 'var(--success)' : 'var(--warning)'}; color: ${item.visibility === 'Public' ? 'var(--success)' : 'var(--warning)'};" onclick="toggleTaskVisibility(${item.id})" title="Click to toggle visibility">
-                                👁️ ${item.visibility || 'Private'}
-                            </button>
-                        </div>
-                        ${due ? `<div style="font-size: 11px; color: ${overdue ? 'var(--danger)' : 'var(--text-muted)'};">Due: ${due.toLocaleString()} ${overdue ? '(Overdue)' : ''}</div>` : ''}
-                    </div>
-                    <div class="note-footer">
-                        <span>Created: ${item.date}</span>
-                        <div style="display: flex; gap: 8px;">
-                            <button class="btn" style="padding: 3px 8px; font-size: 10px;" onclick="openFullscreenTaskEditor(${item.id})">Edit</button>
-                            <button class="btn btn-danger" style="padding: 3px 8px; font-size: 10px;" onclick="deleteNote(${item.id})">Delete</button>
-                        </div>
-                    </div>
-                </div>
-                `;
-            }).join('');
-            updateMetrics();
-        }
-
-        updateMetrics();
-        renderWorldClocks();
-        renderAlarms();
+        // Initialize empty containers on load
         renderPlaylist();
-        renderNotes();
     </script>
 </body>
 </html>
