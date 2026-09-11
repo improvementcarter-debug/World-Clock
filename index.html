@@ -258,7 +258,7 @@
             font-family: monospace;
         }
 
-        /* AUDIO PLAYLIST / MATRIX VIEW */
+        /* AUDIO PLAYLIST VIEW */
         .audio-container-card {
             background: var(--card-bg);
             border: 1px solid var(--border-active);
@@ -290,9 +290,7 @@
         .audio-play-main-btn:hover { background: var(--accent-glow); border-color: var(--primary); }
         .audio-timeline-wrap { flex: 1; display: flex; flex-direction: column; gap: 6px; }
         .audio-time-label { font-size: 11px; color: var(--text-muted); font-family: monospace; }
-        .audio-seek-slider {
-            width: 100%; accent-color: var(--primary); cursor: pointer;
-        }
+        .audio-seek-slider { width: 100%; accent-color: var(--primary); cursor: pointer; }
         .audio-controls-row {
             display: flex;
             gap: 12px;
@@ -326,10 +324,7 @@
             font-size: 12px;
             color: var(--text-muted);
         }
-        .audio-volume-section input[type="range"] {
-            flex: 1; accent-color: var(--primary); cursor: pointer;
-        }
-
+        .audio-volume-section input[type="range"] { flex: 1; accent-color: var(--primary); cursor: pointer; }
         .filter-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 12px; color: var(--text-muted); }
 
         .playlist-tracklist {
@@ -354,6 +349,111 @@
         }
         .playlist-track-item:hover { border-color: var(--border-active); background: rgba(0, 240, 255, 0.05); }
         .playlist-track-item.active { border-color: var(--primary); background: var(--accent-glow); color: var(--primary); font-weight: bold; }
+
+        /* SUCCESS RATE CALCULATOR & SUMMARY TOOL VIEW */
+        .calculator-container-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-active);
+            border-radius: 14px;
+            padding: 25px;
+            max-width: 800px;
+            margin: 20px auto;
+        }
+        .calc-form-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        .calc-form-group label {
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            display: block;
+            margin-bottom: 6px;
+        }
+        .calc-form-group textarea {
+            width: 100%;
+            height: 140px;
+            background: var(--bg-deep);
+            border: 1px solid var(--border-active);
+            color: var(--text-color);
+            padding: 12px;
+            border-radius: 6px;
+            box-sizing: border-box;
+            outline: none;
+            font-family: monospace;
+            font-size: 13px;
+            resize: vertical;
+        }
+        .calc-results-section {
+            margin-top: 25px;
+            display: none;
+        }
+        .calc-cards-wrapper {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .calc-rate-card {
+            flex: 1;
+            background: var(--bg-deep);
+            padding: 15px 20px;
+            border-radius: 8px;
+            border-left: 5px solid var(--primary);
+            border-top: 1px solid var(--border-active);
+            border-right: 1px solid var(--border-active);
+            border-bottom: 1px solid var(--border-active);
+        }
+        .calc-rate-card.ng {
+            border-left-color: var(--success);
+        }
+        .calc-rate-title {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+        }
+        .calc-rate-value {
+            font-size: 22px;
+            font-weight: bold;
+            color: var(--text-color);
+            font-family: monospace;
+        }
+        .calc-summary-box {
+            background: var(--bg-deep);
+            border: 1px solid var(--border-active);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            line-height: 1.6;
+            font-size: 13px;
+            color: var(--text-color);
+        }
+        .calc-summary-box h3 {
+            margin-top: 0;
+            color: var(--primary);
+            font-size: 14px;
+        }
+        .calc-table-wrap {
+            overflow-x: auto;
+        }
+        .calc-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 12px;
+        }
+        .calc-table th, .calc-table td {
+            padding: 10px 12px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+        }
+        .calc-table th {
+            background-color: var(--bg-panel);
+            color: var(--primary);
+            letter-spacing: 0.5px;
+        }
+        .calc-table tr:hover {
+            background-color: rgba(0, 240, 255, 0.03);
+        }
 
         /* GENERAL BUTTONS */
         .btn {
@@ -425,6 +525,7 @@
             <div class="nav-item" onclick="switchView('countdown', this)">⏳ COUNTDOWN</div>
             <div class="nav-item" onclick="switchView('tasks', this)">📁 TASKS & LOGS</div>
             <div class="nav-item" onclick="switchView('playlist', this)">🎵 AUDIO PLAYLIST</div>
+            <div class="nav-item" onclick="switchView('calculator', this)">📐 SUCCESS RATE & SUMMARY</div>
             <div class="nav-item" onclick="appLogout()" style="margin-top: auto; color: var(--danger);">🚪 SIGN OUT</div>
         </div>
 
@@ -726,6 +827,59 @@
                     <!-- Playlist Tracklist Container -->
                     <div class="playlist-tracklist" id="playlistTrackContainer">
                         <div style="color: var(--text-muted); font-size: 11px; text-align: center; padding: 20px;">Playlist is empty. Upload tracks to begin.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 8. SUCCESS RATE CALCULATOR & SUMMARY TOOL -->
+            <div id="view-calculator" class="view-section">
+                <div class="dashboard-header-bar">
+                    <h1 class="dashboard-title">SUCCESS RATE & SUMMARY</h1>
+                    <div class="copyright-tag">✨ COPYRIGHT &copy; 2026 ALL RIGHTS RESERVED BY PIXEL FRIEND. ⚠️</div>
+                </div>
+
+                <div class="calculator-container-card">
+                    <div style="font-size: 16px; font-weight: bold; color: var(--text-color); margin-bottom: 8px;">Success Rate Calculator & Summary Tool</div>
+                    <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 15px;">Please paste your raw success rate data into the text box below and click the button to calculate:</p>
+
+                    <div class="calc-form-group">
+                        <textarea id="dataInput" placeholder="Paste your raw success rate data here... (e.g. containing blocks with 'The statistic of success rate on', BK: X%, NG: Y%)"></textarea>
+                    </div>
+
+                    <button class="btn" onclick="calculateData()">Calculate & Generate Report</button>
+
+                    <div id="resultsSection" class="calc-results-section">
+                        <div class="calc-cards-wrapper">
+                            <div class="calc-rate-card">
+                                <div class="calc-rate-title">BK Average Success Rate</div>
+                                <div class="calc-rate-value" id="bkAvg">-</div>
+                            </div>
+                            <div class="calc-rate-card ng">
+                                <div class="calc-rate-title">NG Average Success Rate</div>
+                                <div class="calc-rate-value" id="ngAvg">-</div>
+                            </div>
+                        </div>
+
+                        <div class="calc-summary-box">
+                            <h3 style="margin-top:0;">📊 Summary</h3>
+                            <div id="summaryText">Please enter data and calculate first.</div>
+                        </div>
+
+                        <div style="font-size: 13px; font-weight: bold; color: var(--text-color); margin-top: 20px; margin-bottom: 5px;"> Hourly Average Success Rate Breakdown</div>
+                        <div class="calc-table-wrap">
+                            <table class="calc-table">
+                                <thead>
+                                    <tr>
+                                        <th>Time Slot</th>
+                                        <th>BK Average Success Rate</th>
+                                        <th>NG Average Success Rate</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="hourlyTableBody">
+                                    <!-- Dynamically populated -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1315,6 +1469,81 @@
                 }
             }
         });
+
+        // Success Rate Calculator & Summary Tool Logic (Aligned exactly with reference file)
+        function calculateData() {
+            const rawText = document.getElementById('dataInput').value;
+            if (!rawText.trim()) {
+                alert("Please enter data!");
+                return;
+            }
+
+            const blocks = rawText.split("The statistic of success rate on");
+            let hourlyMap = {};
+            let allBk = [];
+            let allNg = [];
+
+            for (let i = 1; i < blocks.length; i++) {
+                let block = blocks[i];
+                let lines = block.trim().split('\n');
+                let hour = lines[0].trim();
+                
+                if (!hourlyMap[hour]) {
+                    hourlyMap[hour] = { bk: [], ng: [] };
+                }
+
+                for (let line of lines) {
+                    line = line.trim();
+                    if (line.startsWith("BK:")) {
+                        let val = parseFloat(line.replace("BK:", "").replace("%", "").trim());
+                        if (!isNaN(val)) {
+                            hourlyMap[hour].bk.push(val);
+                            allBk.push(val);
+                        }
+                    } else if (line.startsWith("NG:")) {
+                        let val = parseFloat(line.replace("NG:", "").replace("%", "").trim());
+                        if (!isNaN(val)) {
+                            hourlyMap[hour].ng.push(val);
+                            allNg.push(val);
+                        }
+                    }
+                }
+            }
+
+            if (allBk.length === 0 && allNg.length === 0) {
+                alert("No valid data recognized. Please check the format!");
+                return;
+            }
+
+            let totalBkAvg = allBk.reduce((a, b) => a + b, 0) / allBk.length;
+            let totalNgAvg = allNg.reduce((a, b) => a + b, 0) / allNg.length;
+            let diff = (totalNgAvg - totalBkAvg).toFixed(2);
+
+            document.getElementById('bkAvg').innerText = totalBkAvg.toFixed(2) + '%';
+            document.getElementById('ngAvg').innerText = totalNgAvg.toFixed(2) + '%';
+
+            let summaryHTML = `
+                <p><strong>NG</strong> overall performance is superior to BK, with an average success rate of <strong>${totalNgAvg.toFixed(2)}%</strong>.</p>
+                <p><strong>BK</strong> has an average success rate of <strong>${totalBkAvg.toFixed(2)}%</strong>, showing general stability during certain periods but noticeable fluctuations elsewhere.</p>
+                <p><strong>NG</strong>'s average success rate is higher than BK by <strong>${diff}</strong> percentage points.</p>
+            `;
+            document.getElementById('summaryText').innerHTML = summaryHTML;
+
+            let tableBodyHTML = '';
+            let sortedHours = Object.keys(hourlyMap);
+            
+            for (let hour of sortedHours) {
+                let bkArr = hourlyMap[hour].bk;
+                let ngArr = hourlyMap[hour].ng;
+                let bkHourAvg = bkArr.length ? (bkArr.reduce((a, b) => a + b, 0) / bkArr.length).toFixed(2) + '%' : 'N/A';
+                let ngHourAvg = ngArr.length ? (ngArr.reduce((a, b) => a + b, 0) / ngArr.length).toFixed(2) + '%' : 'N/A';
+
+                tableBodyHTML += `<tr><td>${hour}</td><td>${bkHourAvg}</td><td>${ngHourAvg}</td></tr>`;
+            }
+
+            document.getElementById('hourlyTableBody').innerHTML = tableBodyHTML;
+            document.getElementById('resultsSection').style.display = 'block';
+        }
 
         // Tasks and Logs Management (with Task Pinned Feature)
         let notes = JSON.parse(localStorage.getItem('cyber_tasks_v9') || '[]').map(n => ({
