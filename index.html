@@ -636,6 +636,7 @@
             <div class="nav-item" onclick="switchView('calculator', this)">📐 SUCCESS RATE & SUMMARY</div>
             <div class="nav-item" onclick="switchView('rawlogs', this)">📋 PASTE LOGS</div>
             <div class="nav-item" onclick="switchView('betting', this)">🎲 BETTING DATA_BO TC</div>
+            <div class="nav-item" onclick="switchView('bettingfl88', this)">🎲 BETTING DATA_FL88 +FU88 TC</div>
             <div class="nav-item" onclick="appLogout()" style="margin-top: auto; color: var(--danger);">🚪 SIGN OUT</div>
         </div>
 
@@ -1062,6 +1063,56 @@
                                 <tr class="total-row">
                                     <td>TOTAL</td>
                                     <td id="total_users">0</td>
+                                    <td colspan="6"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 11. BETTING DATA_FL88 + FU88 TC VIEW -->
+            <div id="view-bettingfl88" class="view-section">
+                <div class="dashboard-header-bar">
+                    <h1 class="dashboard-title">BETTING DATA_FL88 + FU88 TC</h1>
+                    <div class="copyright-tag">✨ COPYRIGHT &copy; 2026 ALL RIGHTS RESERVED BY PIXEL FRIEND. ⚠️</div>
+                </div>
+
+                <div class="betting-container-card">
+                    <div style="font-size: 16px; font-weight: bold; color: var(--text-color); margin-bottom: 8px;">Paste Raw Data (FL88 + FU88 TC)</div>
+                    <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 15px;">Paste rows containing columns: <code>Username</code>, <code>Game Type</code>, <code>Game Valid Betting</code>, etc.</p>
+                    
+                    <textarea id="bettingDataInputFL88" class="logs-textarea" placeholder="Paste FL88 + FU88 Excel/TSV data here..."></textarea>
+                    <br>
+                    <button class="btn" onclick="processDataFL88()">Generate FL88 + FU88 Table</button>
+
+                    <div class="betting-table-wrap">
+                        <table class="betting-summary-table" id="summaryTableFL88">
+                            <thead>
+                                <tr>
+                                    <th colspan="2" class="rng-header">RNG</th>
+                                    <th colspan="2" class="fish-header">FISH</th>
+                                    <th colspan="2" class="pvp-header">PVP</th>
+                                    <th colspan="2" class="live-header">LIVE</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td id="fl88_rng_users">0</td>
+                                    <td id="fl88_rng_bet">0</td>
+                                    <td id="fl88_fish_users">0</td>
+                                    <td id="fl88_fish_bet">0</td>
+                                    <td id="fl88_pvp_users">0</td>
+                                    <td id="fl88_pvp_bet">0</td>
+                                    <td id="fl88_live_users">0</td>
+                                    <td id="fl88_live_bet">0</td>
+                                </tr>
+                                <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                                <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                                <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                                <tr class="total-row">
+                                    <td>TOTAL</td>
+                                    <td id="fl88_total_users">0</td>
                                     <td colspan="6"></td>
                                 </tr>
                             </tbody>
@@ -1846,6 +1897,62 @@
             document.getElementById('live_bet').innerText = stats['LIVE'].bet;
 
             document.getElementById('total_users').innerText = allUsers.size.toLocaleString();
+        }
+
+        // BETTING DATA_FL88 + FU88 TC Logic
+        function processDataFL88() {
+            const rawText = document.getElementById('bettingDataInputFL88').value.trim();
+            if (!rawText) return;
+
+            const lines = rawText.split('\n');
+            const records = [];
+            const allUsers = new Set();
+
+            const delimiter = rawText.includes('\t') ? '\t' : ',';
+
+            lines.forEach((line, idx) => {
+                if (idx === 0 && line.toLowerCase().includes('username')) return;
+                
+                const cols = line.split(delimiter);
+                if (cols.length >= 3) {
+                    const username = cols[0].trim();
+                    const gameType = cols[1].trim().toUpperCase();
+                    const validBetting = parseFloat(cols[2]) || 0;
+
+                    if (username) {
+                        allUsers.add(username);
+                        records.push({ username, gameType, validBetting });
+                    }
+                }
+            });
+
+            const categories = ['RNG', 'FISH', 'PVP', 'LIVE'];
+            const stats = {};
+
+            categories.forEach(cat => {
+                const catRecords = records.filter(r => r.gameType === cat);
+                const uniqueUsers = new Set(catRecords.map(r => r.username)).size;
+                const totalBet = Math.round(catRecords.reduce((sum, r) => sum + r.validBetting, 0));
+
+                stats[cat] = {
+                    users: uniqueUsers.toLocaleString(),
+                    bet: totalBet.toLocaleString()
+                };
+            });
+
+            document.getElementById('fl88_rng_users').innerText = stats['RNG'].users;
+            document.getElementById('fl88_rng_bet').innerText = stats['RNG'].bet;
+            
+            document.getElementById('fl88_fish_users').innerText = stats['FISH'].users;
+            document.getElementById('fl88_fish_bet').innerText = stats['FISH'].bet;
+            
+            document.getElementById('fl88_pvp_users').innerText = stats['PVP'].users;
+            document.getElementById('fl88_pvp_bet').innerText = stats['PVP'].bet;
+            
+            document.getElementById('fl88_live_users').innerText = stats['LIVE'].users;
+            document.getElementById('fl88_live_bet').innerText = stats['LIVE'].bet;
+
+            document.getElementById('fl88_total_users').innerText = allUsers.size.toLocaleString();
         }
 
         // Tasks and Logs Management (with Task Pinned Feature)
