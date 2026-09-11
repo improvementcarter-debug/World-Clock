@@ -455,6 +455,81 @@
             background-color: rgba(0, 240, 255, 0.03);
         }
 
+        /* PASTE RAW OPERATIONAL LOGS VIEW */
+        .logs-container-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-active);
+            border-radius: 14px;
+            padding: 25px;
+            max-width: 800px;
+            margin: 20px auto;
+        }
+        .logs-textarea {
+            width: 100%;
+            height: 150px;
+            background: var(--bg-deep);
+            border: 1px solid var(--border-active);
+            color: var(--text-color);
+            padding: 12px;
+            border-radius: 6px;
+            box-sizing: border-box;
+            outline: none;
+            font-family: monospace;
+            font-size: 13px;
+            resize: vertical;
+            margin-bottom: 12px;
+        }
+        .report-details-box {
+            background: var(--bg-deep);
+            border: 1px solid var(--border-active);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        .report-details-box summary {
+            font-weight: bold;
+            cursor: pointer;
+            color: var(--primary);
+            font-size: 1.1em;
+            outline: none;
+        }
+        .report-header-bar-inner {
+            margin-top: 15px;
+            margin-bottom: 10px;
+            border-top: 1px solid var(--border);
+            padding-top: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+        .report-content-box {
+            white-space: pre-line;
+            line-height: 1.5;
+            font-size: 0.95em;
+            font-family: monospace;
+            background: var(--bg-panel);
+            color: var(--text-color);
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            word-break: break-all;
+        }
+        .copy-btn-custom {
+            background-color: var(--success);
+            color: white;
+            border: none;
+            padding: 6px 14px;
+            font-size: 0.85em;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .copy-btn-custom:hover {
+            opacity: 0.9;
+        }
+
         /* GENERAL BUTTONS */
         .btn {
             background-color: transparent; border: 1px solid var(--primary); color: var(--primary);
@@ -526,6 +601,7 @@
             <div class="nav-item" onclick="switchView('tasks', this)">📁 TASKS & LOGS</div>
             <div class="nav-item" onclick="switchView('playlist', this)">🎵 AUDIO PLAYLIST</div>
             <div class="nav-item" onclick="switchView('calculator', this)">📐 SUCCESS RATE & SUMMARY</div>
+            <div class="nav-item" onclick="switchView('rawlogs', this)">📋 PASTE LOGS</div>
             <div class="nav-item" onclick="appLogout()" style="margin-top: auto; color: var(--danger);">🚪 SIGN OUT</div>
         </div>
 
@@ -881,6 +957,32 @@
                             </table>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- 9. PASTE RAW OPERATIONAL LOGS VIEW -->
+            <div id="view-rawlogs" class="view-section">
+                <div class="dashboard-header-bar">
+                    <h1 class="dashboard-title">OPERATIONAL STATUS REPORT GENERATOR</h1>
+                    <div class="copyright-tag">✨ COPYRIGHT &copy; 2026 ALL RIGHTS RESERVED BY PIXEL FRIEND. ⚠️</div>
+                </div>
+
+                <div class="logs-container-card">
+                    <div style="font-size: 16px; font-weight: bold; color: var(--text-color); margin-bottom: 8px;">Paste Raw Operational Logs</div>
+                    <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 15px;">Paste your raw logs below to instantly parse and generate standardized status reports[cite: 2]:</p>
+                    
+                    <textarea id="rawInput" class="logs-textarea" placeholder="Paste your raw logs here..."></textarea>
+                    <br>
+                    <button class="btn" onclick="generateReport()">Generate Dropdown Report</button>
+
+                    <details id="reportDetails" class="report-details-box" style="display:none;">
+                        <summary>📊 Click to View Operational Status Report</summary>
+                        <div class="report-header-bar-inner">
+                            <span>Standardized Output Preview:</span>
+                            <button class="btn copy-btn-custom" onclick="copyReport()">📋 Copy Report</button>
+                        </div>
+                        <div id="reportContent" class="report-content-box"></div>
+                    </details>
                 </div>
             </div>
 
@@ -1470,7 +1572,7 @@
             }
         });
 
-        // Success Rate Calculator & Summary Tool Logic (Aligned exactly with reference file)
+        // Success Rate Calculator & Summary Tool Logic
         function calculateData() {
             const rawText = document.getElementById('dataInput').value;
             if (!rawText.trim()) {
@@ -1543,6 +1645,67 @@
 
             document.getElementById('hourlyTableBody').innerHTML = tableBodyHTML;
             document.getElementById('resultsSection').style.display = 'block';
+        }
+
+        // Paste Raw Operational Logs Logic
+        function generateReport() {
+            const rawText = document.getElementById('rawInput').value;
+            if (!rawText.trim()) {
+                alert("Please paste some logs first!");
+                return;
+            }
+
+            let cleanedText = rawText
+                .replace(/["']/g, '')
+                .replace(/mantainence/gi, 'maintenance')
+                .replace(/mantianence/gi, 'maintenance');
+
+            const lines = cleanedText.split('\n');
+            let formattedLines = [];
+            
+            for (let line of lines) {
+                line = line.trim();
+                if (!line) continue;
+
+                if (line.endsWith(':') || /^[A-Z0-9]{2,5}:$/.test(line)) {
+                    if (formattedLines.length > 0) {
+                        formattedLines.push('');
+                    }
+                    formattedLines.push(`<u><b>${line}</b></u>`);
+                } else {
+                    let timeMatch = line.match(/^(\d{2}:\d{2})\s*(.*)$/);
+                    if (timeMatch) {
+                        let time = timeMatch[1];
+                        let rest = timeMatch[2].trim();
+
+                        if (/^[A-Z]{2,3}\s+[a-z]/.test(rest) && !rest.includes(',')) {
+                            rest = rest.replace(/^([A-Z]{2,3})\s+/, '$1, ');
+                        }
+
+                        formattedLines.push(`${time} - ${rest}`);
+                    } else {
+                        formattedLines.push(line);
+                    }
+                }
+            }
+
+            document.getElementById('reportContent').innerHTML = formattedLines.join('\n');
+            let detailsElem = document.getElementById('reportDetails');
+            detailsElem.style.display = 'block';
+            detailsElem.open = true;
+        }
+
+        function copyReport() {
+            const content = document.getElementById('reportContent').innerText;
+            navigator.clipboard.writeText(content).then(() => {
+                const btn = document.querySelector('.copy-btn-custom');
+                btn.textContent = '✅ Copied!';
+                setTimeout(() => {
+                    btn.textContent = '📋 Copy Report';
+                }, 2000);
+            }).catch(err => {
+                alert('Failed to copy text: ' + err);
+            });
         }
 
         // Tasks and Logs Management (with Task Pinned Feature)
