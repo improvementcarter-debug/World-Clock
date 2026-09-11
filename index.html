@@ -530,6 +530,39 @@
             opacity: 0.9;
         }
 
+        /* BETTING DATA_BO TC VIEW STYLING */
+        .betting-container-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-active);
+            border-radius: 14px;
+            padding: 25px;
+            max-width: 900px;
+            margin: 20px auto;
+        }
+        .betting-table-wrap {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+        .betting-summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--card-bg);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            text-align: center;
+            margin: 0 auto;
+            font-size: 14px;
+        }
+        .betting-summary-table th, .betting-summary-table td {
+            border: 1px solid var(--border-active);
+            padding: 10px 15px;
+            color: var(--text-color);
+        }
+        .rng-header { background-color: #f4c542; color: #000; font-weight: bold; }
+        .fish-header { background-color: #c05a1e; color: #fff; font-weight: bold; }
+        .pvp-header { background-color: #1a73e8; color: #fff; font-weight: bold; }
+        .live-header { background-color: #a8d5ba; color: #000; font-weight: bold; }
+        .total-row { background-color: #0f9d58; color: #fff; font-weight: bold; text-align: left; }
+
         /* GENERAL BUTTONS */
         .btn {
             background-color: transparent; border: 1px solid var(--primary); color: var(--primary);
@@ -602,6 +635,7 @@
             <div class="nav-item" onclick="switchView('playlist', this)">🎵 AUDIO PLAYLIST</div>
             <div class="nav-item" onclick="switchView('calculator', this)">📐 SUCCESS RATE & SUMMARY</div>
             <div class="nav-item" onclick="switchView('rawlogs', this)">📋 PASTE LOGS</div>
+            <div class="nav-item" onclick="switchView('betting', this)">🎲 BETTING DATA_BO TC</div>
             <div class="nav-item" onclick="appLogout()" style="margin-top: auto; color: var(--danger);">🚪 SIGN OUT</div>
         </div>
 
@@ -983,6 +1017,56 @@
                         </div>
                         <div id="reportContent" class="report-content-box"></div>
                     </details>
+                </div>
+            </div>
+
+            <!-- 10. BETTING DATA_BO TC VIEW -->
+            <div id="view-betting" class="view-section">
+                <div class="dashboard-header-bar">
+                    <h1 class="dashboard-title">BETTING DATA_BO TC</h1>
+                    <div class="copyright-tag">✨ COPYRIGHT &copy; 2026 ALL RIGHTS RESERVED BY PIXEL FRIEND. ⚠️</div>
+                </div>
+
+                <div class="betting-container-card">
+                    <div style="font-size: 16px; font-weight: bold; color: var(--text-color); margin-bottom: 8px;">Paste Raw Data (Tab-separated or Excel rows)</div>
+                    <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 15px;">Paste your rows containing columns: <code>Username</code>, <code>Game Type</code>, <code>Game Valid Betting</code>, etc[cite: 2].</p>
+                    
+                    <textarea id="bettingDataInput" class="logs-textarea" placeholder="Paste Excel/TSV data here..."></textarea>
+                    <br>
+                    <button class="btn" onclick="processDataBODT()">Generate Table</button>
+
+                    <div class="betting-table-wrap">
+                        <table class="betting-summary-table" id="summaryTable">
+                            <thead>
+                                <tr>
+                                    <th colspan="2" class="rng-header">RNG</th>
+                                    <th colspan="2" class="fish-header">FISH</th>
+                                    <th colspan="2" class="pvp-header">PVP</th>
+                                    <th colspan="2" class="live-header">LIVE</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td id="rng_users">0</td>
+                                    <td id="rng_bet">0</td>
+                                    <td id="fish_users">0</td>
+                                    <td id="fish_bet">0</td>
+                                    <td id="pvp_users">0</td>
+                                    <td id="pvp_bet">0</td>
+                                    <td id="live_users">0</td>
+                                    <td id="live_bet">0</td>
+                                </tr>
+                                <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                                <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                                <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                                <tr class="total-row">
+                                    <td>TOTAL</td>
+                                    <td id="total_users">0</td>
+                                    <td colspan="6"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
@@ -1706,6 +1790,62 @@
             }).catch(err => {
                 alert('Failed to copy text: ' + err);
             });
+        }
+
+        // BETTING DATA_BO TC Logic
+        function processDataBODT() {
+            const rawText = document.getElementById('bettingDataInput').value.trim();
+            if (!rawText) return;
+
+            const lines = rawText.split('\n');
+            const records = [];
+            const allUsers = new Set();
+
+            const delimiter = rawText.includes('\t') ? '\t' : ',';
+
+            lines.forEach((line, idx) => {
+                if (idx === 0 && line.toLowerCase().includes('username')) return;
+                
+                const cols = line.split(delimiter);
+                if (cols.length >= 3) {
+                    const username = cols[0].trim();
+                    const gameType = cols[1].trim().toUpperCase();
+                    const validBetting = parseFloat(cols[2]) || 0;
+
+                    if (username) {
+                        allUsers.add(username);
+                        records.push({ username, gameType, validBetting });
+                    }
+                }
+            });
+
+            const categories = ['RNG', 'FISH', 'PVP', 'LIVE'];
+            const stats = {};
+
+            categories.forEach(cat => {
+                const catRecords = records.filter(r => r.gameType === cat);
+                const uniqueUsers = new Set(catRecords.map(r => r.username)).size;
+                const totalBet = Math.round(catRecords.reduce((sum, r) => sum + r.validBetting, 0));
+
+                stats[cat] = {
+                    users: uniqueUsers.toLocaleString(),
+                    bet: totalBet.toLocaleString()
+                };
+            });
+
+            document.getElementById('rng_users').innerText = stats['RNG'].users;
+            document.getElementById('rng_bet').innerText = stats['RNG'].bet;
+            
+            document.getElementById('fish_users').innerText = stats['FISH'].users;
+            document.getElementById('fish_bet').innerText = stats['FISH'].bet;
+            
+            document.getElementById('pvp_users').innerText = stats['PVP'].users;
+            document.getElementById('pvp_bet').innerText = stats['PVP'].bet;
+            
+            document.getElementById('live_users').innerText = stats['LIVE'].users;
+            document.getElementById('live_bet').innerText = stats['LIVE'].bet;
+
+            document.getElementById('total_users').innerText = allUsers.size.toLocaleString();
         }
 
         // Tasks and Logs Management (with Task Pinned Feature)
